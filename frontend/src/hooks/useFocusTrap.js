@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -8,6 +8,12 @@ const FOCUSABLE =
  * to the previously focused element when deactivated. Esc calls `onEscape`.
  */
 export default function useFocusTrap(active, ref, onEscape) {
+  const onEscapeRef = useRef(onEscape);
+
+  useEffect(() => {
+    onEscapeRef.current = onEscape;
+  }, [onEscape]);
+
   useEffect(() => {
     if (!active || !ref.current) return undefined;
 
@@ -24,7 +30,7 @@ export default function useFocusTrap(active, ref, onEscape) {
 
     const onKeyDown = (event) => {
       if (event.key === 'Escape') {
-        if (onEscape) onEscape();
+        if (onEscapeRef.current) onEscapeRef.current();
         return;
       }
       if (event.key !== 'Tab') return;
@@ -46,5 +52,5 @@ export default function useFocusTrap(active, ref, onEscape) {
       node.removeEventListener('keydown', onKeyDown);
       if (previouslyFocused && previouslyFocused.focus) previouslyFocused.focus();
     };
-  }, [active, ref, onEscape]);
+  }, [active, ref]);
 }
