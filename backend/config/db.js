@@ -1,5 +1,8 @@
 const mysql = require('mysql2/promise');
 
+const sslEnabled =
+  process.env.DB_SSL === 'true' || /aivencloud\.com$/i.test(process.env.DB_HOST || '');
+
 const pool = mysql.createPool({
   host: process.env.DB_HOST || 'localhost',
   port: Number(process.env.DB_PORT) || 3306,
@@ -11,6 +14,7 @@ const pool = mysql.createPool({
   queueLimit: 0,
   dateStrings: true,
   timezone: 'Z',
+  ...(sslEnabled ? { ssl: { rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false' } } : {}),
 });
 
 async function testConnection() {
