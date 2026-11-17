@@ -25,6 +25,23 @@ const STATUS_CLASS = {
 
 const timeInputValue = (value) => (value ? String(value).slice(0, 5) : '');
 
+const bookingPdfName = (booking) => {
+  const guest = String(booking.guestName || 'Guest')
+    .replace(/[\\/:*?"<>|]/g, '')
+    .trim();
+  const bookedOn = booking.createdAt ? formatDate(booking.createdAt) : '';
+  return `${guest || 'Guest'}${bookedOn ? ` - ${bookedOn}` : ''}.pdf`;
+};
+
+function ReportField({ label, children }) {
+  return (
+    <label className="report-field">
+      <span>{label}</span>
+      {children}
+    </label>
+  );
+}
+
 const emptyForm = {
   roomId: '',
   guestName: '',
@@ -408,83 +425,97 @@ export default function Bookings() {
 
             <details className="guest-report-toggle" open>
               <summary>Guest report details</summary>
-              <div className="form-row">
-                <input
-                  placeholder="Occupation"
-                  value={form.guestOccupation}
-                  onChange={(e) => setForm({ ...form, guestOccupation: e.target.value })}
-                  required
-                />
-                <input
-                  placeholder="Purpose of stay"
-                  value={form.stayPurpose}
-                  onChange={(e) => setForm({ ...form, stayPurpose: e.target.value })}
-                  required
-                />
-                <input
-                  placeholder="Emergency contact name"
-                  value={form.guestContactName}
-                  onChange={(e) => setForm({ ...form, guestContactName: e.target.value })}
-                  required
-                />
-                <input
-                  type="tel"
-                  placeholder="Emergency contact phone"
-                  value={form.guestContactPhone}
-                  onChange={(e) => setForm({ ...form, guestContactPhone: e.target.value })}
-                  required
-                />
-                <input
-                  placeholder="Means of ID (NIN, voter card, licence)"
-                  value={form.guestIdType}
-                  onChange={(e) => setForm({ ...form, guestIdType: e.target.value })}
-                  required
-                />
-                <input
-                  placeholder="ID document number"
-                  value={form.guestIdDocument}
-                  onChange={(e) => setForm({ ...form, guestIdDocument: e.target.value })}
-                  required
-                />
-                <input
-                  placeholder="Vehicle no."
-                  value={form.vehicleNo}
-                  onChange={(e) => setForm({ ...form, vehicleNo: e.target.value })}
-                  required
-                />
-                <input
-                  placeholder="Arrival from"
-                  value={form.arrivalFrom}
-                  onChange={(e) => setForm({ ...form, arrivalFrom: e.target.value })}
-                  required
-                />
-                <input
-                  type="time"
-                  aria-label="Time of arrival"
-                  title="Time of arrival"
-                  value={form.arrivalTime}
-                  onChange={(e) => setForm({ ...form, arrivalTime: e.target.value })}
-                  required
-                />
-                <input
-                  placeholder="Destination"
-                  value={form.destination}
-                  onChange={(e) => setForm({ ...form, destination: e.target.value })}
-                />
-                <input
-                  type="date"
-                  aria-label="Date of departure"
-                  title="Date of departure"
-                  value={form.departureDate}
-                  onChange={(e) => setForm({ ...form, departureDate: e.target.value })}
-                />
-                <input
-                  type="time"
-                  aria-label="Time of departure"
-                  title="Time of departure"
-                  value={form.departureTime}
-                  onChange={(e) => setForm({ ...form, departureTime: e.target.value })}
-                />
+              <div className="form-row report-fields">
+                <ReportField label="Occupation">
+                  <input
+                    value={form.guestOccupation}
+                    onChange={(e) => setForm({ ...form, guestOccupation: e.target.value })}
+                    required
+                  />
+                </ReportField>
+                <ReportField label="Purpose of stay">
+                  <input
+                    value={form.stayPurpose}
+                    onChange={(e) => setForm({ ...form, stayPurpose: e.target.value })}
+                    required
+                  />
+                </ReportField>
+                <ReportField label="Emergency contact name">
+                  <input
+                    value={form.guestContactName}
+                    onChange={(e) => setForm({ ...form, guestContactName: e.target.value })}
+                    required
+                  />
+                </ReportField>
+                <ReportField label="Emergency contact phone">
+                  <input
+                    type="tel"
+                    placeholder="e.g. 0803 000 0000"
+                    value={form.guestContactPhone}
+                    onChange={(e) => setForm({ ...form, guestContactPhone: e.target.value })}
+                    required
+                  />
+                </ReportField>
+                <ReportField label="Means of identification (NIN, voter card, licence)">
+                  <input
+                    value={form.guestIdType}
+                    onChange={(e) => setForm({ ...form, guestIdType: e.target.value })}
+                    required
+                  />
+                </ReportField>
+                <ReportField label="ID document number">
+                  <input
+                    placeholder="Enter ID number"
+                    value={form.guestIdDocument}
+                    onChange={(e) => setForm({ ...form, guestIdDocument: e.target.value })}
+                    required
+                  />
+                </ReportField>
+                <ReportField label="Vehicle number">
+                  <input
+                    placeholder="e.g. GMB-123-AA"
+                    value={form.vehicleNo}
+                    onChange={(e) => setForm({ ...form, vehicleNo: e.target.value })}
+                    required
+                  />
+                </ReportField>
+                <ReportField label="Arrival from">
+                  <input
+                    placeholder="e.g. Bauchi"
+                    value={form.arrivalFrom}
+                    onChange={(e) => setForm({ ...form, arrivalFrom: e.target.value })}
+                    required
+                  />
+                </ReportField>
+                <ReportField label="Time of arrival">
+                  <input
+                    type="time"
+                    value={form.arrivalTime}
+                    onChange={(e) => setForm({ ...form, arrivalTime: e.target.value })}
+                    required
+                  />
+                </ReportField>
+                <ReportField label="Destination (optional)">
+                  <input
+                    placeholder="e.g. Gombe"
+                    value={form.destination}
+                    onChange={(e) => setForm({ ...form, destination: e.target.value })}
+                  />
+                </ReportField>
+                <ReportField label="Date of departure (optional)">
+                  <input
+                    type="date"
+                    value={form.departureDate}
+                    onChange={(e) => setForm({ ...form, departureDate: e.target.value })}
+                  />
+                </ReportField>
+                <ReportField label="Time of departure (optional)">
+                  <input
+                    type="time"
+                    value={form.departureTime}
+                    onChange={(e) => setForm({ ...form, departureTime: e.target.value })}
+                  />
+                </ReportField>
               </div>
             </details>
           </form>
@@ -601,7 +632,7 @@ export default function Bookings() {
                   <button
                     className="btn btn-ghost"
                     onClick={() =>
-                      downloadFile(`/receipts/booking/${b.id}.pdf`, `booking-${b.id}.pdf`).catch(
+                      downloadFile(`/receipts/booking/${b.id}.pdf`, bookingPdfName(b)).catch(
                         (err) => setError(err.message)
                       )
                     }
@@ -855,7 +886,7 @@ export default function Bookings() {
                 type="button"
                 className="btn btn-outline"
                 onClick={() =>
-                  downloadFile(`/receipts/booking/${preview.id}.pdf`, `booking-${preview.id}.pdf`).catch(
+                  downloadFile(`/receipts/booking/${preview.id}.pdf`, bookingPdfName(preview)).catch(
                     (err) => setError(err.message)
                   )
                 }
@@ -915,125 +946,145 @@ export default function Bookings() {
 
                 <section className="detail-section">
                   <h3>Guest information</h3>
-                  <div className="form-row">
-                    <input
-                      placeholder="Guest name"
-                      value={editForm.guestName}
-                      onChange={(e) => setEditForm({ ...editForm, guestName: e.target.value })}
-                      required
-                    />
-                    <input
-                      placeholder="Guest phone"
-                      value={editForm.guestPhone}
-                      onChange={(e) => setEditForm({ ...editForm, guestPhone: e.target.value })}
-                      required
-                    />
-                    <input
-                      type="email"
-                      placeholder="Guest email"
-                      value={editForm.guestEmail}
-                      onChange={(e) => setEditForm({ ...editForm, guestEmail: e.target.value })}
-                    />
-                    <input
-                      placeholder="Guest address"
-                      value={editForm.guestAddress}
-                      onChange={(e) => setEditForm({ ...editForm, guestAddress: e.target.value })}
-                      required
-                    />
-                    <input
-                      placeholder="Occupation"
-                      value={editForm.guestOccupation}
-                      onChange={(e) =>
-                        setEditForm({ ...editForm, guestOccupation: e.target.value })
-                      }
-                      required
-                    />
-                    <input
-                      placeholder="Purpose of stay"
-                      value={editForm.stayPurpose}
-                      onChange={(e) => setEditForm({ ...editForm, stayPurpose: e.target.value })}
-                      required
-                    />
-                    <input
-                      placeholder="Emergency contact name"
-                      value={editForm.guestContactName}
-                      onChange={(e) =>
-                        setEditForm({ ...editForm, guestContactName: e.target.value })
-                      }
-                      required
-                    />
-                    <input
-                      type="tel"
-                      placeholder="Emergency contact phone"
-                      value={editForm.guestContactPhone}
-                      onChange={(e) =>
-                        setEditForm({ ...editForm, guestContactPhone: e.target.value })
-                      }
-                      required
-                    />
-                    <input
-                      placeholder="Means of ID (NIN, voter card, licence)"
-                      value={editForm.guestIdType}
-                      onChange={(e) => setEditForm({ ...editForm, guestIdType: e.target.value })}
-                      required
-                    />
-                    <input
-                      placeholder="ID document number"
-                      value={editForm.guestIdDocument}
-                      onChange={(e) =>
-                        setEditForm({ ...editForm, guestIdDocument: e.target.value })
-                      }
-                      required
-                    />
-                    <input
-                      placeholder="Vehicle no."
-                      value={editForm.vehicleNo}
-                      onChange={(e) => setEditForm({ ...editForm, vehicleNo: e.target.value })}
-                      required
-                    />
+                  <div className="form-row report-fields">
+                    <ReportField label="Guest name">
+                      <input
+                        value={editForm.guestName}
+                        onChange={(e) => setEditForm({ ...editForm, guestName: e.target.value })}
+                        required
+                      />
+                    </ReportField>
+                    <ReportField label="Guest phone">
+                      <input
+                        type="tel"
+                        placeholder="e.g. 0803 000 0000"
+                        value={editForm.guestPhone}
+                        onChange={(e) => setEditForm({ ...editForm, guestPhone: e.target.value })}
+                        required
+                      />
+                    </ReportField>
+                    <ReportField label="Guest email (optional)">
+                      <input
+                        type="email"
+                        value={editForm.guestEmail}
+                        onChange={(e) => setEditForm({ ...editForm, guestEmail: e.target.value })}
+                      />
+                    </ReportField>
+                    <ReportField label="Guest address">
+                      <input
+                        value={editForm.guestAddress}
+                        onChange={(e) => setEditForm({ ...editForm, guestAddress: e.target.value })}
+                        required
+                      />
+                    </ReportField>
+                    <ReportField label="Occupation">
+                      <input
+                        value={editForm.guestOccupation}
+                        onChange={(e) =>
+                          setEditForm({ ...editForm, guestOccupation: e.target.value })
+                        }
+                        required
+                      />
+                    </ReportField>
+                    <ReportField label="Purpose of stay">
+                      <input
+                        value={editForm.stayPurpose}
+                        onChange={(e) => setEditForm({ ...editForm, stayPurpose: e.target.value })}
+                        required
+                      />
+                    </ReportField>
+                    <ReportField label="Emergency contact name">
+                      <input
+                        value={editForm.guestContactName}
+                        onChange={(e) =>
+                          setEditForm({ ...editForm, guestContactName: e.target.value })
+                        }
+                        required
+                      />
+                    </ReportField>
+                    <ReportField label="Emergency contact phone">
+                      <input
+                        type="tel"
+                        placeholder="e.g. 0803 000 0000"
+                        value={editForm.guestContactPhone}
+                        onChange={(e) =>
+                          setEditForm({ ...editForm, guestContactPhone: e.target.value })
+                        }
+                        required
+                      />
+                    </ReportField>
+                    <ReportField label="Means of identification (NIN, voter card, licence)">
+                      <input
+                        value={editForm.guestIdType}
+                        onChange={(e) => setEditForm({ ...editForm, guestIdType: e.target.value })}
+                        required
+                      />
+                    </ReportField>
+                    <ReportField label="ID document number">
+                      <input
+                        placeholder="Enter ID number"
+                        value={editForm.guestIdDocument}
+                        onChange={(e) =>
+                          setEditForm({ ...editForm, guestIdDocument: e.target.value })
+                        }
+                        required
+                      />
+                    </ReportField>
+                    <ReportField label="Vehicle number">
+                      <input
+                        placeholder="e.g. GMB-123-AA"
+                        value={editForm.vehicleNo}
+                        onChange={(e) => setEditForm({ ...editForm, vehicleNo: e.target.value })}
+                        required
+                      />
+                    </ReportField>
                   </div>
                 </section>
 
                 <section className="detail-section">
                   <h3>Travel details</h3>
-                  <div className="form-row">
-                    <input
-                      placeholder="Arrival from"
-                      value={editForm.arrivalFrom}
-                      onChange={(e) => setEditForm({ ...editForm, arrivalFrom: e.target.value })}
-                      required
-                    />
-                    <input
-                      type="time"
-                      aria-label="Time of arrival"
-                      title="Time of arrival"
-                      value={editForm.arrivalTime}
-                      onChange={(e) => setEditForm({ ...editForm, arrivalTime: e.target.value })}
-                      required
-                    />
-                    <input
-                      placeholder="Destination"
-                      value={editForm.destination}
-                      onChange={(e) => setEditForm({ ...editForm, destination: e.target.value })}
-                    />
-                    <input
-                      type="date"
-                      aria-label="Date of departure"
-                      title="Date of departure"
-                      value={editForm.departureDate}
-                      onChange={(e) =>
-                        setEditForm({ ...editForm, departureDate: e.target.value })
-                      }
-                    />
-                    <input
-                      type="time"
-                      aria-label="Time of departure"
-                      title="Time of departure"
-                      value={editForm.departureTime}
-                      onChange={(e) =>
-                        setEditForm({ ...editForm, departureTime: e.target.value })
-                      }
-                    />
+                  <div className="form-row report-fields">
+                    <ReportField label="Arrival from">
+                      <input
+                        placeholder="e.g. Bauchi"
+                        value={editForm.arrivalFrom}
+                        onChange={(e) => setEditForm({ ...editForm, arrivalFrom: e.target.value })}
+                        required
+                      />
+                    </ReportField>
+                    <ReportField label="Time of arrival">
+                      <input
+                        type="time"
+                        value={editForm.arrivalTime}
+                        onChange={(e) => setEditForm({ ...editForm, arrivalTime: e.target.value })}
+                        required
+                      />
+                    </ReportField>
+                    <ReportField label="Destination (optional)">
+                      <input
+                        placeholder="e.g. Gombe"
+                        value={editForm.destination}
+                        onChange={(e) => setEditForm({ ...editForm, destination: e.target.value })}
+                      />
+                    </ReportField>
+                    <ReportField label="Date of departure (optional)">
+                      <input
+                        type="date"
+                        value={editForm.departureDate}
+                        onChange={(e) =>
+                          setEditForm({ ...editForm, departureDate: e.target.value })
+                        }
+                      />
+                    </ReportField>
+                    <ReportField label="Time of departure (optional)">
+                      <input
+                        type="time"
+                        value={editForm.departureTime}
+                        onChange={(e) =>
+                          setEditForm({ ...editForm, departureTime: e.target.value })
+                        }
+                      />
+                    </ReportField>
                   </div>
                 </section>
               </div>

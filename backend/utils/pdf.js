@@ -268,11 +268,21 @@ function reportDetailRow(doc, number, label, value) {
   doc.y = bottom + 5;
 }
 
+function guestReportFilename(b) {
+  const guest =
+    String(b.guestName || 'Guest')
+      .replace(/[^\w\s-]/g, '')
+      .trim()
+      .replace(/\s+/g, ' ') || 'Guest';
+  const bookedOn = b.createdAt ? fmtDate(b.createdAt) : '';
+  return `${guest}${bookedOn ? ` - ${bookedOn}` : ''}.pdf`;
+}
+
 /** Booking PDF: the guest report form plus payment details. */
 function streamGuestReportPdf(res, { business, receipt: b }) {
   const doc = new PDFDocument({ size: 'A4', margin: 40 });
   res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader('Content-Disposition', 'inline; filename="guest-report.pdf"');
+  res.setHeader('Content-Disposition', `inline; filename="${guestReportFilename(b)}"`);
   doc.pipe(res);
 
   const left = doc.page.margins.left;
