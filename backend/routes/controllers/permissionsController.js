@@ -1,6 +1,7 @@
 const { pool } = require('../../config/db');
 const { sendData, badRequest } = require('../../utils/response');
 const { invalidate } = require('../../utils/permissionCache');
+const { clearOrders, clearBookings, isValidClearPin } = require('../../utils/clearData');
 const { listRoles } = require('../../db/roles');
 
 async function getMatrix(req, res, next) {
@@ -76,4 +77,21 @@ async function updateRole(req, res, next) {
   }
 }
 
-module.exports = { getMatrix, updateRole };
+async function clearData(req, res, next) {
+  try {
+    const { mode, pin } = req.body;
+    if (!isValidClearPin(pin)) {
+      return next(badRequest('Invalid clear-data PIN'));
+    }
+
+    const result = mode === 'orders' ? await clearOrders() : await clearBookings();
+    const io = req.app.get('io');
+    if (io) io.emit('data:cleared', { mode });
+
+    return sendData(res, { mode, ...result });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { getMatrix, updateRole, clearData };

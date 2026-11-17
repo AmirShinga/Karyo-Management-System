@@ -11,9 +11,9 @@
  */
 require('dotenv').config();
 const readline = require('readline');
-const { pool, withTransaction } = require('./config/db');
+const { pool } = require('./config/db');
+const { clearOrders, clearBookings, isValidClearPin } = require('./utils/clearData');
 
-const CLEAR_PIN = process.env.CLEAR_DATA_PIN || '5858';
 const args = process.argv.slice(2);
 
 function hasFlag(name) {
@@ -51,54 +51,6 @@ function printUsage() {
   console.log('  --pin       Clear-data PIN (prompted if omitted)');
 }
 
-async function count(sql, params = []) {
-  const [[row]] = await pool.query(sql, params);
-  return Number(row.n);
-}
-
-async function clearOrders() {
-  const orders = await count('SELECT COUNT(*) AS n FROM restaurant_orders');
-  const income = await count("SELECT COUNT(*) AS n FROM income WHERE source = 'restaurant'");
-  const receipts = await count(
-    "SELECT COUNT(*) AS n FROM receipt_snapshots WHERE kind = 'order'"
-  );
-
-  console.log(
-    `Deleting ${orders} order(s), ${income} restaurant income record(s) and ${receipts} order receipt snapshot(s)...`
-  );
-
-  await withTransaction(async (conn) => {
-    await conn.query('DELETE FROM restaurant_orders');
-    await conn.query("DELETE FROM income WHERE source = 'restaurant'");
-    await conn.query("DELETE FROM receipt_snapshots WHERE kind = 'order'");
-  });
-
-  console.log('Restaurant order data cleared.');
-}
-
-async function clearBookings() {
-  const bookings = await count('SELECT COUNT(*) AS n FROM bookings');
-  const income = await count("SELECT COUNT(*) AS n FROM income WHERE source = 'room'");
-  const receipts = await count(
-    "SELECT COUNT(*) AS n FROM receipt_snapshots WHERE kind = 'booking'"
-  );
-  const history = await count('SELECT COUNT(*) AS n FROM room_status_history');
-
-  console.log(
-    `Deleting ${bookings} booking(s), ${income} room income record(s), ${history} room status history row(s) and ${receipts} booking receipt snapshot(s)...`
-  );
-
-  await withTransaction(async (conn) => {
-    await conn.query('DELETE FROM bookings');
-    await conn.query("DELETE FROM income WHERE source = 'room'");
-    await conn.query('DELETE FROM room_status_history');
-    await conn.query("DELETE FROM receipt_snapshots WHERE kind = 'booking'");
-    await conn.query("UPDATE rooms SET status = 'available' WHERE status = 'occupied'");
-  });
-
-  console.log('Booking data cleared and occupied rooms released.');
-}
-
 async function main() {
   if (hasFlag('help') || args.length === 0) {
     printUsage();
@@ -115,16 +67,24 @@ async function main() {
   }
 
   const pin = argValue('pin') || (await ask('Enter clear-data PIN: '));
-  if (pin !== CLEAR_PIN) {
+  if (!isValidClearPin(pin)) {
     console.error('Invalid clear-data PIN. Nothing was deleted.');
     process.exitCode = 1;
     return;
   }
 
   if (orders) {
-    await clearOrders();
+    const result = await clearOrders();
+    console.log(
+      `Deleted ${result.orders} order(s), ${result.income} restaurant income record(s) and ${result.receipts} order receipt snapshot(s).`
+    );
+    console.log('Restaurant order data cleared.');
   } else {
-    await clearBookings();
+    const result = await clearBookings();
+    console.log(
+      `Deleted ${result.bookings} booking(s), ${result.income} room income record(s), ${result.history} room status history row(s) and ${result.receipts} booking receipt snapshot(s).`
+    );
+    console.log('Booking data cleared and occupied rooms released.');
   }
 }
 

@@ -4,4 +4,9 @@ const updateRolePermissionsSchema = z.object({
   permissions: z.array(z.string().min(1)).max(200),
 });
 
-module.exports = { updateRolePermissionsSchema };
+const clearDataSchema = z.object({
+  mode: z.enum(['orders', 'bookings']),
+  pin: z.string().min(1).max(20),
+});
+
+module.exports = { updateRolePermissionsSchema, clearDataSchema };

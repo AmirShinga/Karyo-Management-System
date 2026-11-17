@@ -17,6 +17,9 @@ export default function Permissions() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [clearMode, setClearMode] = useState(null);
+  const [clearPin, setClearPin] = useState('');
+  const [clearing, setClearing] = useState(false);
 
   const applyData = useCallback((data) => {
     setPermissions(data.permissions);
@@ -119,6 +122,43 @@ export default function Permissions() {
     }
   };
 
+  const startClear = (mode) => {
+    setClearMode(mode);
+    setClearPin('');
+    setError('');
+    setNotice('');
+  };
+
+  const cancelClear = () => {
+    setClearMode(null);
+    setClearPin('');
+  };
+
+  const confirmClear = async (e) => {
+    e.preventDefault();
+    if (!clearMode) return;
+    setClearing(true);
+    setError('');
+    setNotice('');
+    try {
+      const res = await api.post('/permissions/clear-data', {
+        mode: clearMode,
+        pin: clearPin,
+      });
+      const data = res.data.data;
+      const summary =
+        clearMode === 'orders'
+          ? `${data.orders} order(s), ${data.income} restaurant income record(s) and ${data.receipts} order receipt snapshot(s)`
+          : `${data.bookings} booking(s), ${data.income} room income record(s), ${data.history} room status history row(s) and ${data.receipts} booking receipt snapshot(s)`;
+      setNotice(`Cleared ${summary}.`);
+      cancelClear();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setClearing(false);
+    }
+  };
+
   return (
     <div>
       <h1>Permissions</h1>
@@ -150,6 +190,65 @@ export default function Permissions() {
         <p className="muted small">
           Role keys use lowercase letters, numbers and underscores. A key is generated from the
           name when left blank.
+        </p>
+      </div>
+
+      <div className="card">
+        <h2>Clear test data</h2>
+        <p className="muted">
+          Permanently delete test transactions. Users, rooms, menu, settings and permissions are
+          kept.
+        </p>
+
+        {clearMode ? (
+          <form onSubmit={confirmClear}>
+            <p className="muted small">
+              Enter the clear-data PIN to permanently delete{' '}
+              {clearMode === 'orders' ? 'all restaurant orders' : 'all bookings'}.
+            </p>
+            <div className="form-row">
+              <input
+                type="password"
+                inputMode="numeric"
+                autoComplete="off"
+                placeholder="Clear-data PIN"
+                value={clearPin}
+                onChange={(e) => setClearPin(e.target.value)}
+                required
+                autoFocus
+              />
+              <button className="btn btn-danger" type="submit" disabled={clearing}>
+                {clearing ? 'Clearing…' : `Clear ${clearMode}`}
+              </button>
+              <button
+                className="btn btn-ghost"
+                type="button"
+                onClick={cancelClear}
+                disabled={clearing}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        ) : (
+          <div className="row-actions">
+            <button className="btn btn-danger" type="button" onClick={() => startClear('orders')}>
+              Clear orders
+            </button>
+            <button
+              className="btn btn-danger"
+              type="button"
+              onClick={() => startClear('bookings')}
+            >
+              Clear bookings
+            </button>
+          </div>
+        )}
+
+        <p className="muted small">
+          Clearing orders removes restaurant orders, restaurant income and order receipts. Clearing
+          bookings removes bookings, room income, room status history and booking receipts, and
+          releases occupied rooms.
         </p>
       </div>
 
