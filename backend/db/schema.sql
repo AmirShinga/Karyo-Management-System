@@ -1,4 +1,4 @@
--- Hotel Management System — MySQL schema
+-- Karyo Guest Palace — MySQL schema
 -- Run via: npm run db:setup  (or paste into MySQL client)
 
 SET NAMES utf8mb4;

@@ -1,7 +1,7 @@
 {
-  "name": "hms-backend",
+  "name": "karyo-backend",
   "version": "1.0.0",
-  "description": "Hotel Management System backend (rooms, bookings, restaurant, finance)",
+  "description": "Karyo Guest Palace backend (rooms, bookings, restaurant, finance)",
   "main": "server.js",
   "type": "commonjs",
   "scripts": {

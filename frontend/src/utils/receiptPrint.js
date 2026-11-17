@@ -228,7 +228,7 @@ export function buildReceiptHtml(data) {
 </style>
 </head>
 <body>
-  <h1>${esc(business.name || 'Hotel Management System')}</h1>
+  <h1>${esc(business.name || 'Karyo Guest Palace')}</h1>
   <div class="subtitle">${esc(title)}</div>
   <hr />
   <table class="meta"><tbody>${metaRows(meta)}</tbody></table>

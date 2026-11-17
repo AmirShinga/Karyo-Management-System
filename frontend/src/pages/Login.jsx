@@ -99,7 +99,7 @@ export default function Login() {
           <div className="auth-hero-content">
             <span className="auth-badge">
               <Sparkles size={14} aria-hidden="true" />
-              Hotel Management
+              Karyo Guest Palace
             </span>
             <h2>
               Run your hotel <span>beautifully.</span>
@@ -121,8 +121,8 @@ export default function Login() {
         <section className="auth-panel">
           <div className="auth-card">
             <div className="auth-card-head">
-              <div className="auth-logo" aria-hidden="true">
-                {mfaChallenge ? '🔐' : '🏨'}
+              <div className={`auth-logo${mfaChallenge ? '' : ' auth-logo-brand'}`} aria-hidden="true">
+                {mfaChallenge ? '🔐' : <img src="/logo.png" alt="" className="auth-logo-img" />}
               </div>
               <h1>{mfaChallenge ? 'Two-step verification' : 'Welcome back'}</h1>
               <p className="text-muted text-sm">

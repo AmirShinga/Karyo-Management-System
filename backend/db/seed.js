@@ -56,7 +56,7 @@ async function ensureRoleAccount(role, { name, email, password, fallbackPrefix }
 
 async function main() {
   const settings = {
-    business_name: process.env.BUSINESS_NAME || 'My Hotel',
+    business_name: process.env.BUSINESS_NAME || 'Karyo Guest Palace',
     currency: process.env.CURRENCY || 'NGN',
     currency_symbol: process.env.CURRENCY_SYMBOL || '\u20A6',
     tax_rate: '0',

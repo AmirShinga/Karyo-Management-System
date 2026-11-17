@@ -1,11 +1,14 @@
 const PDFDocument = require('pdfkit');
+const fs = require('fs');
+const path = require('path');
 const { pool } = require('../config/db');
 const { notFound } = require('./response');
 const { paymentSummaryFor, roundMoney } = require('./payments');
 const { saveReceiptSnapshot } = require('./receiptSnapshots');
 
 const CURRENCY = 'NGN';
-const BRAND = 'Hotel Management System';
+const BRAND = 'Karyo Guest Palace';
+const LOGO_PATH = path.join(__dirname, '..', 'assets', 'logo.png');
 const PAYMENT_LABEL = {
   cash: 'Cash',
   pos: 'POS',
@@ -174,6 +177,14 @@ function streamPdf(res, { title, meta, columns, rows, totals }) {
     `inline; filename="${title.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}.pdf"`
   );
   doc.pipe(res);
+
+  if (fs.existsSync(LOGO_PATH)) {
+    const logoSize = 56;
+    doc.image(LOGO_PATH, (doc.page.width - logoSize) / 2, doc.y, {
+      fit: [logoSize, logoSize],
+    });
+    doc.y += logoSize + 8;
+  }
 
   doc.fontSize(20).text(BRAND, { align: 'center' });
   doc.moveDown(0.3);

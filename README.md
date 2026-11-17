@@ -1,6 +1,6 @@
-# Hotel Management System
+# Karyo Guest Palace
 
-Record-keeping and operations system for a hotel with an in-house restaurant.
+Record-keeping and operations system for Karyo Guest Palace, a hotel with an in-house restaurant. Located after Government Girls College Doma, New Liji, Biu Road, P.O. Box 1050, Gombe, Gombe State.
 **Stack:** React + Vite (frontend) · Node + Express (backend) · MySQL · Socket.io.
 
 See [`DESIGN.md`](./DESIGN.md) for the full architecture, database schema, roles, and roadmap.

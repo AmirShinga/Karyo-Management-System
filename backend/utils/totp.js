@@ -84,7 +84,7 @@ function verifyToken(secret, token, window = 1) {
 }
 
 /** Builds the otpauth:// URI used by authenticator apps. */
-function otpauthUri(secret, label, issuer = 'Hotel Management System') {
+function otpauthUri(secret, label, issuer = 'Karyo Guest Palace') {
   const params = new URLSearchParams({
     secret,
     issuer,

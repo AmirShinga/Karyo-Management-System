@@ -3,7 +3,7 @@ const ExcelJS = require('exceljs');
 /** Stream an .xlsx file from a sheet definition to the response. */
 async function streamXlsx(res, filename, sheetName, columns, rows) {
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = 'Hotel Management System';
+  workbook.creator = 'Karyo Guest Palace';
   workbook.created = new Date();
   const sheet = workbook.addWorksheet(sheetName);
 

@@ -1,6 +1,6 @@
-# Hotel Management System — Design Document
+# Karyo Guest Palace — Design Document
 
-Record-keeping and operations system for a hotel business that also runs a restaurant.
+Record-keeping and operations system for Karyo Guest Palace, a hotel business that also runs a restaurant.
 
 - **Stack:** React + Vite (frontend), Node + Express (backend), MySQL (database)
 - **Hosting:** Free tiers / minimal cost
@@ -75,7 +75,7 @@ Backend enforces a `roleCheck(...roles)` middleware on every protected route. Fr
 ## 5. Proposed Folder Structure
 
 ```
-Hotel Management System/
+Karyo Guest Palace/
 ├─ DESIGN.md
 ├─ README.md
 ├─ backend/

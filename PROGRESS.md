@@ -97,7 +97,7 @@ Roles are `admin` · `owner` · `hotel` · `restaurant` · `staff` (`admin` bypa
 
 ## What this is
 
-Hotel Management System for a hotel with an in-house restaurant.
+Karyo Guest Palace for a hotel with an in-house restaurant.
 **Stack:** React 19 + Vite 7 (frontend) · Node + Express 5 + MySQL (mysql2, raw SQL, no ORM) + Socket.io (backend) · JWT + bcrypt · Zod · Nodemailer · PDFKit · ExcelJS.
 
 Full architecture, schema, roles and decisions live in [`DESIGN.md`](./DESIGN.md).

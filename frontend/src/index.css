@@ -1,4 +1,4 @@
-/* Modern CSS Design System for Hotel Management System */
+/* Modern CSS Design System for Karyo Guest Palace */
 /* This file replaces the monolithic index.css with a modular, component-based approach */
 
 /* CSS Custom Properties - Modern color palette */
@@ -225,6 +225,13 @@ p {
   background: linear-gradient(135deg, var(--primary-500), var(--primary-700));
   border-radius: var(--radius-md);
   color: white;
+}
+
+.brand-logo {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
 .brand-text {
@@ -1096,6 +1103,16 @@ textarea::placeholder {
   background: linear-gradient(135deg, var(--primary-500), var(--primary-700));
   box-shadow: var(--shadow-md);
   font-size: 1.75rem;
+}
+
+.auth-logo-brand {
+  background: var(--surface);
+}
+
+.auth-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .auth-alert {

@@ -133,9 +133,9 @@ export default function Layout() {
         </button>
 
         <Link to="/" className="sidebar-brand" onClick={() => setSidebarOpen(false)}>
-          <span className="brand-icon">🏨</span>
+          <img src="/logo.png" alt="" className="brand-logo" />
           <span className="sidebar-brand-text">
-            <span className="sidebar-brand-title">Grand Stay</span>
+            <span className="sidebar-brand-title">Karyo Guest Palace</span>
             <span className="sidebar-brand-sub">Hotel Management</span>
           </span>
         </Link>
@@ -202,7 +202,7 @@ export default function Layout() {
           </button>
 
           <div className="topbar-breadcrumb">
-            <span className="crumb-label">Hotel Management</span>
+            <span className="crumb-label">Karyo Guest Palace</span>
             <ChevronRight size={14} aria-hidden="true" />
             <span className="topbar-title">{title}</span>
           </div>
