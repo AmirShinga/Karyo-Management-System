@@ -69,6 +69,7 @@ CREATE TABLE IF NOT EXISTS bookings (
   arrival_from        VARCHAR(160) NULL,
   arrival_time        TIME NULL,
   destination         VARCHAR(160) NULL,
+  departure_date      DATE NULL,
   departure_time      TIME NULL,
   guest_id_number     VARCHAR(60) NULL,
   check_in_date       DATE NOT NULL,

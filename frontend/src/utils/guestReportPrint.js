@@ -122,12 +122,6 @@ export function buildGuestReportHtml(booking, logoUrl = '/logo.png') {
   .signature { display: flex; align-items: flex-end; gap: 8px; }
   .signature .label { font-weight: 700; white-space: nowrap; }
   .signature .line { flex: 1; border-bottom: 1px solid #000; min-height: 22px; }
-  .footer {
-    margin-top: 12mm;
-    font-size: 8.5pt;
-    color: #444;
-    text-align: center;
-  }
 </style>
 </head>
 <body>
@@ -158,7 +152,7 @@ export function buildGuestReportHtml(booking, logoUrl = '/logo.png') {
   ${row(11, 'Date of Arrival:', formatDate(b.checkInDate))}
   ${row(12, 'Destination:', b.destination)}
   ${row(13, 'Time of Departure:', formatTime(b.departureTime))}
-  ${row(14, 'Date of Departure:', formatDate(b.checkOutDate))}
+    ${row(14, 'Date of Departure:', formatDate(b.departureDate))}
   ${row(15, 'Means of Identification (NIN, Voters I.D Card, Drivers License e.t.c):', idProof)}
   ${row(16, 'Vehicle No:', b.vehicleNo)}
 
@@ -171,10 +165,6 @@ export function buildGuestReportHtml(booking, logoUrl = '/logo.png') {
       <span class="label">18. Manager Sign/Date:</span>
       <span class="line"></span>
     </div>
-  </div>
-
-  <div class="footer">
-    Booking #${esc(b.id || '—')}${b.createdByName ? ` · Booked by ${esc(b.createdByName)}` : ''}
   </div>
 </body>
 </html>`;

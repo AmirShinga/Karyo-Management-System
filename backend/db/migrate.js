@@ -49,7 +49,8 @@ async function ensureGuestReportFields() {
     ['arrival_from', 'arrival_from VARCHAR(160) NULL AFTER vehicle_no'],
     ['arrival_time', 'arrival_time TIME NULL AFTER arrival_from'],
     ['destination', 'destination VARCHAR(160) NULL AFTER arrival_time'],
-    ['departure_time', 'departure_time TIME NULL AFTER destination'],
+    ['departure_date', 'departure_date DATE NULL AFTER destination'],
+    ['departure_time', 'departure_time TIME NULL AFTER departure_date'],
   ];
   for (const [column, definition] of fields) {
     await addColumn('bookings', column, definition);

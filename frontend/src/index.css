@@ -2327,6 +2327,13 @@ textarea::placeholder {
   animation: drawer-slide-in 220ms ease-out;
 }
 
+.drawer-form {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
 @keyframes drawer-slide-in {
   from {
     transform: translateX(100%);

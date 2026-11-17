@@ -32,10 +32,16 @@ function fmtMoney(n) {
 }
 
 function fmtDate(d) {
-  if (!d) return '—';
+  if (!d) return '�?"';
   const dt = new Date(d);
   if (Number.isNaN(dt.getTime())) return String(d);
   return dt.toISOString().slice(0, 10);
+}
+
+function fmtTime(value) {
+  if (!value) return '';
+  const text = String(value);
+  return text.length > 5 ? text.slice(0, 5) : text;
 }
 
 function paymentText(payment) {
@@ -94,6 +100,18 @@ async function getBookingReceiptData(id) {
       guestPhone: b.guest_phone || null,
       guestEmail: b.guest_email || null,
       guestAddress: b.guest_address || null,
+      guestOccupation: b.guest_occupation || null,
+      stayPurpose: b.stay_purpose || null,
+      guestContactName: b.guest_contact_name || null,
+      guestContactPhone: b.guest_contact_phone || null,
+      guestIdType: b.guest_id_type || null,
+      guestIdDocument: b.guest_id_document || null,
+      vehicleNo: b.vehicle_no || null,
+      arrivalFrom: b.arrival_from || null,
+      arrivalTime: b.arrival_time || null,
+      destination: b.destination || null,
+      departureDate: b.departure_date || null,
+      departureTime: b.departure_time || null,
       guestIdNumber: b.guest_id_number || null,
       roomNumber: b.room_number,
       roomType: b.room_type,
@@ -231,6 +249,157 @@ function streamPdf(res, { title, meta, columns, rows, totals }) {
   doc.end();
 }
 
+function reportDetailRow(doc, number, label, value) {
+  const left = doc.page.margins.left;
+  const right = doc.page.width - doc.page.margins.right;
+  const width = right - left;
+  const startY = doc.y;
+  doc.font('Helvetica').fontSize(8.5);
+  doc.text(`${number}. `, left, startY, { width, continued: true });
+  doc.font('Helvetica-Bold').text(`${label}: `, { continued: true });
+  doc.font('Helvetica').text(value ? String(value) : ' ', { width });
+  const bottom = doc.y + 2;
+  doc
+    .moveTo(left, bottom)
+    .lineTo(right, bottom)
+    .lineWidth(0.5)
+    .strokeColor('#000000')
+    .stroke();
+  doc.y = bottom + 5;
+}
+
+/** Booking PDF: the guest report form plus payment details. */
+function streamGuestReportPdf(res, { business, receipt: b }) {
+  const doc = new PDFDocument({ size: 'A4', margin: 40 });
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', 'inline; filename="guest-report.pdf"');
+  doc.pipe(res);
+
+  const left = doc.page.margins.left;
+  const right = doc.page.width - doc.page.margins.right;
+  const width = right - left;
+  const center = doc.page.width / 2;
+
+  if (fs.existsSync(LOGO_PATH)) {
+    const logoSize = 52;
+    doc.image(LOGO_PATH, center - logoSize / 2, doc.y, {
+      fit: [logoSize, logoSize],
+    });
+    doc.y += logoSize + 4;
+  }
+
+  doc
+    .font('Helvetica-Bold')
+    .fontSize(16)
+    .text((business?.name || BRAND).toUpperCase(), { align: 'center' });
+  doc.fontSize(10).text('GUEST REPORT FORM', { align: 'center', characterSpacing: 1.2 });
+  doc.moveDown(0.2);
+  doc
+    .font('Helvetica')
+    .fontSize(8)
+    .text(
+      'After Government Girls College Doma,\nNew Liji, Biu Road, P.O. Box 1050\nGombe, Gombe State\n000101',
+      { align: 'center', lineGap: 1 }
+    );
+
+  doc.moveDown(0.7);
+  doc.fontSize(9).text(`Date: ${fmtDate(new Date())}`, { align: 'right' });
+  doc.moveDown(0.7);
+
+  doc.font('Helvetica-Bold').fontSize(10).text('GUEST DETAILS');
+  const guestRuleY = doc.y + 1;
+  doc.moveTo(left, guestRuleY).lineTo(right, guestRuleY).lineWidth(1).stroke();
+  doc.y = guestRuleY + 6;
+
+  const idProof = [b.guestIdType, b.guestIdDocument].filter(Boolean).join(' \u2014 ');
+  const room = [b.roomNumber, b.roomType ? `(${b.roomType})` : ''].filter(Boolean).join(' ');
+  const rows = [
+    ['Name', b.guestName],
+    ['Address', b.guestAddress],
+    ['Phone No', b.guestPhone],
+    ['Occupation', b.guestOccupation],
+    ['Purpose of Stay', b.stayPurpose],
+    ['Room No Occupied', room],
+    ['Contact Phone No', b.guestContactPhone],
+    ['Name of Contact (Incase of Emergency)', b.guestContactName],
+    ['Arrival from', b.arrivalFrom],
+    ['Time of Arrival', fmtTime(b.arrivalTime)],
+    ['Date of Arrival', fmtDate(b.checkInDate)],
+    ['Destination', b.destination],
+    ['Time of Departure', fmtTime(b.departureTime)],
+    ['Date of Departure', b.departureDate ? fmtDate(b.departureDate) : ''],
+    [
+      'Means of Identification (NIN, Voters I.D Card, Drivers License e.t.c)',
+      idProof,
+    ],
+    ['Vehicle No', b.vehicleNo],
+  ];
+  rows.forEach(([label, value], index) => reportDetailRow(doc, index + 1, label, value));
+
+  doc.moveDown(0.6);
+  const signY = doc.y;
+  doc.font('Helvetica-Bold').fontSize(9);
+  doc.text('17. Customer Sign/Date:', left, signY, { width: width / 2 - 12 });
+  doc.text('18. Manager Sign/Date:', left + width / 2, signY, { width: width / 2 - 12 });
+  const signLineY = signY + 22;
+  doc.moveTo(left, signLineY).lineTo(left + width / 2 - 14, signLineY).lineWidth(0.6).stroke();
+  doc.moveTo(left + width / 2, signLineY).lineTo(right, signLineY).stroke();
+  doc.y = signLineY + 14;
+
+  doc.font('Helvetica-Bold').fontSize(10).text('PAYMENT DETAILS');
+  const payRuleY = doc.y + 1;
+  doc.moveTo(left, payRuleY).lineTo(right, payRuleY).lineWidth(1).stroke();
+  doc.y = payRuleY + 6;
+
+  const paymentRows = [
+    ['Rate per night', fmtMoney(b.ratePerNight)],
+    ['Nights', String(b.nights)],
+    ...(b.discountAmount > 0 ? [['Discount', `- ${fmtMoney(b.discountAmount)}`]] : []),
+    ['Total amount', fmtMoney(b.totalAmount)],
+    ['Amount paid', fmtMoney(b.amountPaid)],
+    ['Balance', fmtMoney(b.balance)],
+    ['Payment status', b.paymentStatus === 'complete' ? 'Complete' : 'Incomplete'],
+    [
+      'Payment method',
+      paymentText({ method: b.paymentMethod, splits: b.paymentSplits }),
+    ],
+  ];
+
+  let payY = doc.y;
+  paymentRows.forEach(([label, value]) => {
+    const rowDoc = doc.font('Helvetica').fontSize(9);
+    rowDoc.text(label, left, payY, { width: width * 0.62 });
+    doc.text(String(value || ''), left + width * 0.62, payY, {
+      width: width * 0.38,
+      align: 'right',
+    });
+    payY += 15;
+  });
+  doc.y = payY;
+
+  if (b.paymentSplits?.length) {
+    doc.moveDown(0.3);
+    doc.font('Helvetica-Bold').fontSize(9).text('Payment breakdown', left, doc.y);
+    doc.moveDown(0.2);
+    b.paymentSplits.forEach((split) => {
+      doc
+        .font('Helvetica')
+        .fontSize(9)
+        .text(`${PAYMENT_LABEL[split.method] || split.method}: ${fmtMoney(split.amount)}`, {
+          indent: 12,
+        });
+    });
+  }
+
+  doc.moveDown(1);
+  doc
+    .font('Helvetica-Oblique')
+    .fontSize(8.5)
+    .text(business?.footer || 'Thank you for your business.', { align: 'center' });
+
+  doc.end();
+}
+
 /** GET /api/receipts/booking/:id.pdf */
 async function bookingReceipt(req, res, next) {
   try {
@@ -249,39 +418,7 @@ async function bookingReceipt(req, res, next) {
       console.error('Receipt snapshot failed:', err.message);
     }
 
-    streamPdf(res, {
-      title: `Booking Invoice #${b.id}`,
-      meta: {
-        'Guest': b.guestName,
-        'Guest ID': b.guestIdNumber || '—',
-        'Phone': b.guestPhone || '—',
-        'Address': b.guestAddress || '—',
-        'Payment': paymentText({ method: b.paymentMethod, splits: b.paymentSplits }),
-        'Room': `${b.roomNumber} (${b.roomType})`,
-        'Check-in': fmtDate(b.checkInDate),
-        'Check-out': fmtDate(b.checkOutDate),
-        'Nights': b.nights,
-        'Status': b.status,
-        'Payment status': b.paymentStatus === 'complete' ? 'Complete' : 'Incomplete',
-        'Issued': fmtDate(new Date()),
-      },
-      columns: ['Description', 'Rate/night', 'Nights', 'Amount'],
-      rows: [
-        [
-          `Room ${b.roomNumber}`,
-          fmtMoney(b.ratePerNight),
-          String(b.nights),
-          fmtMoney(b.totalAmount),
-        ],
-      ],
-      totals: {
-        ...(b.discountAmount > 0 ? { 'Discount': `- ${fmtMoney(b.discountAmount)}` } : {}),
-        'Total': fmtMoney(b.totalAmount),
-        'Paid': fmtMoney(b.amountPaid),
-        'Balance': fmtMoney(b.balance),
-        'Payment status': b.paymentStatus === 'complete' ? 'Complete' : 'Incomplete',
-      },
-    });
+    streamGuestReportPdf(res, data);
   } catch (err) {
     next(err);
   }
@@ -348,6 +485,7 @@ async function orderReceipt(req, res, next) {
 module.exports = {
   bookingReceipt,
   orderReceipt,
+  streamGuestReportPdf,
   getBookingReceiptData,
   getOrderReceiptData,
 };

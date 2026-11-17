@@ -23,6 +23,8 @@ const STATUS_CLASS = {
   cancelled: 'badge badge-danger',
 };
 
+const timeInputValue = (value) => (value ? String(value).slice(0, 5) : '');
+
 const emptyForm = {
   roomId: '',
   guestName: '',
@@ -39,6 +41,7 @@ const emptyForm = {
   arrivalFrom: '',
   arrivalTime: '',
   destination: '',
+  departureDate: '',
   departureTime: '',
   checkInDate: '',
   checkOutDate: '',
@@ -65,14 +68,19 @@ export default function Bookings() {
   const [checkoutPayments, setCheckoutPayments] = useState([]);
   const [paymentFor, setPaymentFor] = useState(null);
   const [paymentRows, setPaymentRows] = useState([]);
+  const [editFor, setEditFor] = useState(null);
+  const [editForm, setEditForm] = useState(null);
+  const [editLoading, setEditLoading] = useState(false);
 
   useEffect(() => {
-    if (!preview && !checkout && !paymentFor) return undefined;
+    if (!preview && !checkout && !paymentFor && !editFor) return undefined;
     const onKeyDown = (e) => {
       if (e.key === 'Escape') {
         setPreview(null);
         setCheckout(null);
         setPaymentFor(null);
+        setEditFor(null);
+        setEditForm(null);
       }
     };
     const previousOverflow = document.body.style.overflow;
@@ -82,7 +90,7 @@ export default function Bookings() {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener('keydown', onKeyDown);
     };
-  }, [preview, checkout, paymentFor]);
+  }, [preview, checkout, paymentFor, editFor]);
 
   const loadBookings = list.reload;
 
@@ -146,6 +154,7 @@ export default function Bookings() {
         arrivalFrom: form.arrivalFrom || null,
         arrivalTime: form.arrivalTime || null,
         destination: form.destination || null,
+        departureDate: form.departureDate || null,
         departureTime: form.departureTime || null,
         checkInDate: form.checkInDate,
         checkOutDate: form.checkOutDate,
@@ -173,6 +182,54 @@ export default function Bookings() {
       await loadBookings();
     } catch (err) {
       setError(err.message);
+    }
+  };
+
+  const closeEditReport = () => {
+    setEditFor(null);
+    setEditForm(null);
+  };
+
+  const startEditReport = (booking) => {
+    setError('');
+    setNotice('');
+    setEditFor(booking);
+    setEditForm({
+      guestName: booking.guestName || '',
+      guestPhone: booking.guestPhone || '',
+      guestEmail: booking.guestEmail || '',
+      guestAddress: booking.guestAddress || '',
+      guestOccupation: booking.guestOccupation || '',
+      stayPurpose: booking.stayPurpose || '',
+      guestContactName: booking.guestContactName || '',
+      guestContactPhone: booking.guestContactPhone || '',
+      guestIdType: booking.guestIdType || '',
+      guestIdDocument: booking.guestIdDocument || '',
+      vehicleNo: booking.vehicleNo || '',
+      arrivalFrom: booking.arrivalFrom || '',
+      arrivalTime: timeInputValue(booking.arrivalTime),
+      destination: booking.destination || '',
+      departureDate: booking.departureDate || '',
+      departureTime: timeInputValue(booking.departureTime),
+    });
+  };
+
+  const saveEditReport = async (e) => {
+    e.preventDefault();
+    if (!editFor || !editForm) return;
+    setError('');
+    setNotice('');
+    setEditLoading(true);
+    try {
+      const res = await api.patch(`/bookings/${editFor.id}/report`, editForm);
+      setPreview(res.data.data);
+      closeEditReport();
+      setNotice('Guest report details updated.');
+      await loadBookings();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setEditLoading(false);
     }
   };
 
@@ -312,6 +369,7 @@ export default function Bookings() {
                 placeholder="Guest phone"
                 value={form.guestPhone}
                 onChange={(e) => setForm({ ...form, guestPhone: e.target.value })}
+                required
               />
               <input
                 type="email"
@@ -323,6 +381,7 @@ export default function Bookings() {
                 placeholder="Guest address"
                 value={form.guestAddress}
                 onChange={(e) => setForm({ ...form, guestAddress: e.target.value })}
+                required
               />
               <input
                 type="number"
@@ -347,49 +406,57 @@ export default function Bookings() {
               </button>
             </div>
 
-            <details className="guest-report-toggle">
-              <summary>Guest report details (optional)</summary>
+            <details className="guest-report-toggle" open>
+              <summary>Guest report details</summary>
               <div className="form-row">
                 <input
                   placeholder="Occupation"
                   value={form.guestOccupation}
                   onChange={(e) => setForm({ ...form, guestOccupation: e.target.value })}
+                  required
                 />
                 <input
                   placeholder="Purpose of stay"
                   value={form.stayPurpose}
                   onChange={(e) => setForm({ ...form, stayPurpose: e.target.value })}
+                  required
                 />
                 <input
                   placeholder="Emergency contact name"
                   value={form.guestContactName}
                   onChange={(e) => setForm({ ...form, guestContactName: e.target.value })}
+                  required
                 />
                 <input
                   type="tel"
                   placeholder="Emergency contact phone"
                   value={form.guestContactPhone}
                   onChange={(e) => setForm({ ...form, guestContactPhone: e.target.value })}
+                  required
                 />
                 <input
                   placeholder="Means of ID (NIN, voter card, licence)"
                   value={form.guestIdType}
                   onChange={(e) => setForm({ ...form, guestIdType: e.target.value })}
+                  required
                 />
                 <input
                   placeholder="ID document number"
                   value={form.guestIdDocument}
                   onChange={(e) => setForm({ ...form, guestIdDocument: e.target.value })}
+                  required
                 />
                 <input
                   placeholder="Vehicle no."
                   value={form.vehicleNo}
                   onChange={(e) => setForm({ ...form, vehicleNo: e.target.value })}
+                  required
                 />
                 <input
                   placeholder="Arrival from"
                   value={form.arrivalFrom}
                   onChange={(e) => setForm({ ...form, arrivalFrom: e.target.value })}
+                  required
                 />
                 <input
                   type="time"
@@ -397,11 +464,19 @@ export default function Bookings() {
                   title="Time of arrival"
                   value={form.arrivalTime}
                   onChange={(e) => setForm({ ...form, arrivalTime: e.target.value })}
+                  required
                 />
                 <input
                   placeholder="Destination"
                   value={form.destination}
                   onChange={(e) => setForm({ ...form, destination: e.target.value })}
+                />
+                <input
+                  type="date"
+                  aria-label="Date of departure"
+                  title="Date of departure"
+                  value={form.departureDate}
+                  onChange={(e) => setForm({ ...form, departureDate: e.target.value })}
                 />
                 <input
                   type="time"
@@ -526,14 +601,6 @@ export default function Bookings() {
                   <button
                     className="btn btn-ghost"
                     onClick={() =>
-                      printGuestReport(b).catch((err) => setError(err.message))
-                    }
-                  >
-                    Report
-                  </button>
-                  <button
-                    className="btn btn-ghost"
-                    onClick={() =>
                       downloadFile(`/receipts/booking/${b.id}.pdf`, `booking-${b.id}.pdf`).catch(
                         (err) => setError(err.message)
                       )
@@ -544,7 +611,7 @@ export default function Bookings() {
                   <button
                     className="btn btn-ghost"
                     onClick={() =>
-                      printReceiptById('booking', b.id).catch((err) => setError(err.message))
+                      printGuestReport(b).catch((err) => setError(err.message))
                     }
                   >
                     Print
@@ -668,7 +735,7 @@ export default function Bookings() {
                     </dd>
                   </div>
                   <div>
-                    <dt>Check-in date</dt>
+                    <dt>Date of arrival</dt>
                     <dd>{formatDate(preview.checkInDate)}</dd>
                   </div>
                   <div>
@@ -676,12 +743,16 @@ export default function Bookings() {
                     <dd>{formatDate(preview.checkOutDate)}</dd>
                   </div>
                   <div>
+                    <dt>Date of departure</dt>
+                    <dd>{preview.departureDate ? formatDate(preview.departureDate) : '—'}</dd>
+                  </div>
+                  <div>
                     <dt>Arrival from</dt>
                     <dd>{preview.arrivalFrom || '—'}</dd>
                   </div>
                   <div>
                     <dt>Time of arrival</dt>
-                    <dd>{preview.arrivalTime || '—'}</dd>
+                    <dd>{preview.arrivalTime ? String(preview.arrivalTime).slice(0, 5) : '—'}</dd>
                   </div>
                   <div>
                     <dt>Destination</dt>
@@ -689,7 +760,7 @@ export default function Bookings() {
                   </div>
                   <div>
                     <dt>Time of departure</dt>
-                    <dd>{preview.departureTime || '—'}</dd>
+                    <dd>{preview.departureTime ? String(preview.departureTime).slice(0, 5) : '—'}</dd>
                   </div>
                   <div>
                     <dt>Nights</dt>
@@ -771,6 +842,15 @@ export default function Bookings() {
             </div>
 
             <div className="drawer-footer">
+              {canBook && (
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={() => startEditReport(preview)}
+                >
+                  Edit details
+                </button>
+              )}
               <button
                 type="button"
                 className="btn btn-outline"
@@ -804,6 +884,169 @@ export default function Bookings() {
                 Close
               </button>
             </div>
+          </aside>
+        </div>
+      )}
+
+      {editFor && editForm && (
+        <div className="drawer-overlay" onClick={closeEditReport}>
+          <aside
+            className="drawer"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="booking-edit-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="drawer-header">
+              <div>
+                <h2 id="booking-edit-title">Edit guest report details</h2>
+                <p className="muted">
+                  Booking #{editFor.id} · {editFor.guestName}
+                </p>
+              </div>
+              <button type="button" className="btn btn-ghost" onClick={closeEditReport}>
+                Close
+              </button>
+            </div>
+
+            <form className="drawer-form" onSubmit={saveEditReport}>
+              <div className="drawer-body">
+                {error && <div className="alert alert-error">{error}</div>}
+
+                <section className="detail-section">
+                  <h3>Guest information</h3>
+                  <div className="form-row">
+                    <input
+                      placeholder="Guest name"
+                      value={editForm.guestName}
+                      onChange={(e) => setEditForm({ ...editForm, guestName: e.target.value })}
+                      required
+                    />
+                    <input
+                      placeholder="Guest phone"
+                      value={editForm.guestPhone}
+                      onChange={(e) => setEditForm({ ...editForm, guestPhone: e.target.value })}
+                      required
+                    />
+                    <input
+                      type="email"
+                      placeholder="Guest email"
+                      value={editForm.guestEmail}
+                      onChange={(e) => setEditForm({ ...editForm, guestEmail: e.target.value })}
+                    />
+                    <input
+                      placeholder="Guest address"
+                      value={editForm.guestAddress}
+                      onChange={(e) => setEditForm({ ...editForm, guestAddress: e.target.value })}
+                      required
+                    />
+                    <input
+                      placeholder="Occupation"
+                      value={editForm.guestOccupation}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, guestOccupation: e.target.value })
+                      }
+                      required
+                    />
+                    <input
+                      placeholder="Purpose of stay"
+                      value={editForm.stayPurpose}
+                      onChange={(e) => setEditForm({ ...editForm, stayPurpose: e.target.value })}
+                      required
+                    />
+                    <input
+                      placeholder="Emergency contact name"
+                      value={editForm.guestContactName}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, guestContactName: e.target.value })
+                      }
+                      required
+                    />
+                    <input
+                      type="tel"
+                      placeholder="Emergency contact phone"
+                      value={editForm.guestContactPhone}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, guestContactPhone: e.target.value })
+                      }
+                      required
+                    />
+                    <input
+                      placeholder="Means of ID (NIN, voter card, licence)"
+                      value={editForm.guestIdType}
+                      onChange={(e) => setEditForm({ ...editForm, guestIdType: e.target.value })}
+                      required
+                    />
+                    <input
+                      placeholder="ID document number"
+                      value={editForm.guestIdDocument}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, guestIdDocument: e.target.value })
+                      }
+                      required
+                    />
+                    <input
+                      placeholder="Vehicle no."
+                      value={editForm.vehicleNo}
+                      onChange={(e) => setEditForm({ ...editForm, vehicleNo: e.target.value })}
+                      required
+                    />
+                  </div>
+                </section>
+
+                <section className="detail-section">
+                  <h3>Travel details</h3>
+                  <div className="form-row">
+                    <input
+                      placeholder="Arrival from"
+                      value={editForm.arrivalFrom}
+                      onChange={(e) => setEditForm({ ...editForm, arrivalFrom: e.target.value })}
+                      required
+                    />
+                    <input
+                      type="time"
+                      aria-label="Time of arrival"
+                      title="Time of arrival"
+                      value={editForm.arrivalTime}
+                      onChange={(e) => setEditForm({ ...editForm, arrivalTime: e.target.value })}
+                      required
+                    />
+                    <input
+                      placeholder="Destination"
+                      value={editForm.destination}
+                      onChange={(e) => setEditForm({ ...editForm, destination: e.target.value })}
+                    />
+                    <input
+                      type="date"
+                      aria-label="Date of departure"
+                      title="Date of departure"
+                      value={editForm.departureDate}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, departureDate: e.target.value })
+                      }
+                    />
+                    <input
+                      type="time"
+                      aria-label="Time of departure"
+                      title="Time of departure"
+                      value={editForm.departureTime}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, departureTime: e.target.value })
+                      }
+                    />
+                  </div>
+                </section>
+              </div>
+
+              <div className="drawer-footer">
+                <button type="button" className="btn btn-ghost" onClick={closeEditReport}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={editLoading}>
+                  {editLoading ? 'Saving…' : 'Save details'}
+                </button>
+              </div>
+            </form>
           </aside>
         </div>
       )}

@@ -36,6 +36,7 @@ function mapBooking(b, payment = {}) {
     arrivalFrom: b.arrival_from,
     arrivalTime: b.arrival_time,
     destination: b.destination,
+    departureDate: b.departure_date,
     departureTime: b.departure_time,
     guestIdNumber: b.guest_id_number,
     checkInDate: b.check_in_date,
@@ -234,10 +235,10 @@ async function createBooking(req, res, next) {
           (room_id, guest_name, guest_phone, guest_email, guest_address,
            guest_occupation, stay_purpose, guest_contact_name, guest_contact_phone,
            guest_id_type, guest_id_document, vehicle_no,
-           arrival_from, arrival_time, destination, departure_time,
+           arrival_from, arrival_time, destination, departure_date, departure_time,
            check_in_date, check_out_date, nights, rate_per_night, discount_amount, total_amount,
            amount_paid, status, created_by)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'reserved', ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'reserved', ?)`,
         [
           b.roomId,
           b.guestName,
@@ -254,6 +255,7 @@ async function createBooking(req, res, next) {
           nullIfEmpty(b.arrivalFrom),
           nullIfEmpty(b.arrivalTime),
           nullIfEmpty(b.destination),
+          nullIfEmpty(b.departureDate),
           nullIfEmpty(b.departureTime),
           b.checkInDate,
           b.checkOutDate,
@@ -449,11 +451,61 @@ async function cancelBooking(req, res, next) {
   }
 }
 
+/** Update the guest report details that can be filled in later. */
+const REPORT_FIELDS = {
+  guestName: 'guest_name',
+  guestPhone: 'guest_phone',
+  guestEmail: 'guest_email',
+  guestAddress: 'guest_address',
+  guestOccupation: 'guest_occupation',
+  stayPurpose: 'stay_purpose',
+  guestContactName: 'guest_contact_name',
+  guestContactPhone: 'guest_contact_phone',
+  guestIdType: 'guest_id_type',
+  guestIdDocument: 'guest_id_document',
+  vehicleNo: 'vehicle_no',
+  arrivalFrom: 'arrival_from',
+  arrivalTime: 'arrival_time',
+  destination: 'destination',
+  departureDate: 'departure_date',
+  departureTime: 'departure_time',
+};
+
+async function updateBookingReport(req, res, next) {
+  try {
+    const { id } = req.params;
+    const updates = [];
+    const params = [];
+    for (const [key, column] of Object.entries(REPORT_FIELDS)) {
+      if (req.body[key] === undefined) continue;
+      updates.push(`${column} = ?`);
+      params.push(nullIfEmpty(req.body[key]));
+    }
+    if (!updates.length) return next(badRequest('No report details to update'));
+
+    const [existing] = await pool.query(
+      'SELECT id FROM bookings WHERE id = ? AND deleted_at IS NULL',
+      [id]
+    );
+    if (!existing.length) return next(notFound('Booking not found'));
+
+    await pool.query(`UPDATE bookings SET ${updates.join(', ')} WHERE id = ?`, [...params, id]);
+    const [rows] = await pool.query(`${SELECT_BOOKING} WHERE b.id = ?`, [id]);
+    const payment = await paymentSummaryFor(pool, 'room', rows[0].id);
+    const io = req.app.get('io');
+    if (io) io.emit('booking:updated', { id: Number(id), status: rows[0].status });
+    return sendData(res, mapBooking(rows[0], payment));
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   listBookings,
   getBooking,
   availability,
   createBooking,
+  updateBookingReport,
   checkIn,
   checkOut,
   recordPayment,
