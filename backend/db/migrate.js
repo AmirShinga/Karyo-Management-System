@@ -37,6 +37,25 @@ async function ensureBookingGuestFields() {
   console.log(`  guest ID numbers backfilled: ${result.affectedRows}`);
 }
 
+async function ensureGuestReportFields() {
+  const fields = [
+    ['guest_occupation', 'guest_occupation VARCHAR(120) NULL AFTER guest_address'],
+    ['stay_purpose', 'stay_purpose VARCHAR(255) NULL AFTER guest_occupation'],
+    ['guest_contact_name', 'guest_contact_name VARCHAR(160) NULL AFTER stay_purpose'],
+    ['guest_contact_phone', 'guest_contact_phone VARCHAR(30) NULL AFTER guest_contact_name'],
+    ['guest_id_type', 'guest_id_type VARCHAR(60) NULL AFTER guest_contact_phone'],
+    ['guest_id_document', 'guest_id_document VARCHAR(80) NULL AFTER guest_id_type'],
+    ['vehicle_no', 'vehicle_no VARCHAR(60) NULL AFTER guest_id_document'],
+    ['arrival_from', 'arrival_from VARCHAR(160) NULL AFTER vehicle_no'],
+    ['arrival_time', 'arrival_time TIME NULL AFTER arrival_from'],
+    ['destination', 'destination VARCHAR(160) NULL AFTER arrival_time'],
+    ['departure_time', 'departure_time TIME NULL AFTER destination'],
+  ];
+  for (const [column, definition] of fields) {
+    await addColumn('bookings', column, definition);
+  }
+}
+
 async function ensurePaymentSchema() {
   const [columns] = await pool.query("SHOW COLUMNS FROM income LIKE 'payment_method'");
   if (!columns.length) {
@@ -430,6 +449,9 @@ async function main() {
 
   console.log('Ensuring booking guest fields...');
   await ensureBookingGuestFields();
+
+  console.log('Ensuring guest report fields...');
+  await ensureGuestReportFields();
 
   console.log('Ensuring payment schema...');
   await ensurePaymentSchema();

@@ -26,6 +26,17 @@ function mapBooking(b, payment = {}) {
     guestPhone: b.guest_phone,
     guestEmail: b.guest_email,
     guestAddress: b.guest_address,
+    guestOccupation: b.guest_occupation,
+    stayPurpose: b.stay_purpose,
+    guestContactName: b.guest_contact_name,
+    guestContactPhone: b.guest_contact_phone,
+    guestIdType: b.guest_id_type,
+    guestIdDocument: b.guest_id_document,
+    vehicleNo: b.vehicle_no,
+    arrivalFrom: b.arrival_from,
+    arrivalTime: b.arrival_time,
+    destination: b.destination,
+    departureTime: b.departure_time,
     guestIdNumber: b.guest_id_number,
     checkInDate: b.check_in_date,
     checkOutDate: b.check_out_date,
@@ -64,6 +75,11 @@ function guestIdFor(bookingId) {
   return `G-${String(bookingId).padStart(6, '0')}`;
 }
 
+function nullIfEmpty(value) {
+  if (value === undefined || value === null) return null;
+  return String(value).trim() === '' ? null : value;
+}
+
 async function listBookings(req, res, next) {
   try {
     const { status, roomId, from, to } = req.query;
@@ -89,10 +105,10 @@ async function listBookings(req, res, next) {
     }
     if (search) {
       where.push(
-        '(b.guest_name LIKE ? OR b.guest_phone LIKE ? OR b.guest_email LIKE ? OR b.guest_id_number LIKE ? OR r.room_number LIKE ?)'
+        '(b.guest_name LIKE ? OR b.guest_phone LIKE ? OR b.guest_email LIKE ? OR b.guest_id_number LIKE ? OR b.guest_id_document LIKE ? OR b.vehicle_no LIKE ? OR r.room_number LIKE ?)'
       );
       const like = `%${search}%`;
-      params.push(like, like, like, like, like);
+      params.push(like, like, like, like, like, like, like);
     }
 
     const [[{ total }]] = await pool.query(
@@ -216,15 +232,29 @@ async function createBooking(req, res, next) {
       const [result] = await conn.query(
         `INSERT INTO bookings
           (room_id, guest_name, guest_phone, guest_email, guest_address,
+           guest_occupation, stay_purpose, guest_contact_name, guest_contact_phone,
+           guest_id_type, guest_id_document, vehicle_no,
+           arrival_from, arrival_time, destination, departure_time,
            check_in_date, check_out_date, nights, rate_per_night, discount_amount, total_amount,
            amount_paid, status, created_by)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'reserved', ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'reserved', ?)`,
         [
           b.roomId,
           b.guestName,
-          b.guestPhone || null,
-          b.guestEmail || null,
-          b.guestAddress || null,
+          nullIfEmpty(b.guestPhone),
+          nullIfEmpty(b.guestEmail),
+          nullIfEmpty(b.guestAddress),
+          nullIfEmpty(b.guestOccupation),
+          nullIfEmpty(b.stayPurpose),
+          nullIfEmpty(b.guestContactName),
+          nullIfEmpty(b.guestContactPhone),
+          nullIfEmpty(b.guestIdType),
+          nullIfEmpty(b.guestIdDocument),
+          nullIfEmpty(b.vehicleNo),
+          nullIfEmpty(b.arrivalFrom),
+          nullIfEmpty(b.arrivalTime),
+          nullIfEmpty(b.destination),
+          nullIfEmpty(b.departureTime),
           b.checkInDate,
           b.checkOutDate,
           nights,

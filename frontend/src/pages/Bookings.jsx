@@ -3,6 +3,7 @@ import api from '../api/api';
 import { downloadFile } from '../api/api';
 import { money, formatDate, formatDateTime } from '../utils/format';
 import { printReceiptById } from '../utils/receiptPrint';
+import { printGuestReport } from '../utils/guestReportPrint';
 import { useAuth } from '../context/AuthContext';
 import PaymentSplitFields from '../components/PaymentSplitFields';
 import usePagedResource from '../hooks/usePagedResource';
@@ -28,6 +29,17 @@ const emptyForm = {
   guestPhone: '',
   guestEmail: '',
   guestAddress: '',
+  guestOccupation: '',
+  stayPurpose: '',
+  guestContactName: '',
+  guestContactPhone: '',
+  guestIdType: '',
+  guestIdDocument: '',
+  vehicleNo: '',
+  arrivalFrom: '',
+  arrivalTime: '',
+  destination: '',
+  departureTime: '',
   checkInDate: '',
   checkOutDate: '',
   discountAmount: '',
@@ -124,6 +136,17 @@ export default function Bookings() {
         guestPhone: form.guestPhone || null,
         guestEmail: form.guestEmail || null,
         guestAddress: form.guestAddress || null,
+        guestOccupation: form.guestOccupation || null,
+        stayPurpose: form.stayPurpose || null,
+        guestContactName: form.guestContactName || null,
+        guestContactPhone: form.guestContactPhone || null,
+        guestIdType: form.guestIdType || null,
+        guestIdDocument: form.guestIdDocument || null,
+        vehicleNo: form.vehicleNo || null,
+        arrivalFrom: form.arrivalFrom || null,
+        arrivalTime: form.arrivalTime || null,
+        destination: form.destination || null,
+        departureTime: form.departureTime || null,
         checkInDate: form.checkInDate,
         checkOutDate: form.checkOutDate,
         discountAmount: discountAmount > 0 ? discountAmount : undefined,
@@ -246,75 +269,149 @@ export default function Bookings() {
       {canBook && (
         <div className="card">
           <h2>New booking</h2>
-          <form className="form-row" onSubmit={onSubmit}>
-            <input
-              type="date"
-              value={form.checkInDate}
-              onChange={(e) => setForm({ ...form, checkInDate: e.target.value })}
-              required
-            />
-            <input
-              type="date"
-              value={form.checkOutDate}
-              onChange={(e) => setForm({ ...form, checkOutDate: e.target.value })}
-              required
-            />
-            <select
-              value={form.roomId}
-              onChange={(e) => onRoomChange(e.target.value)}
-              required
-              disabled={!availableRooms.length}
-            >
-              <option value="">
-                {form.checkInDate && form.checkOutDate
-                  ? availableRooms.length
-                    ? 'Select room'
-                    : 'No rooms available'
-                  : 'Choose dates first'}
-              </option>
-              {availableRooms.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.roomNumber} — {r.roomType} ({money(r.ratePerNight)})
-                </option>
-              ))}
-            </select>
-            <input
-              placeholder="Guest name"
-              value={form.guestName}
-              onChange={(e) => setForm({ ...form, guestName: e.target.value })}
-              required
-            />
-            <input
-              placeholder="Guest phone"
-              value={form.guestPhone}
-              onChange={(e) => setForm({ ...form, guestPhone: e.target.value })}
-            />
-            <input
-              placeholder="Guest address"
-              value={form.guestAddress}
-              onChange={(e) => setForm({ ...form, guestAddress: e.target.value })}
-            />
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              placeholder="Discount"
-              value={form.discountAmount}
-              onChange={(e) => setForm({ ...form, discountAmount: e.target.value })}
-              aria-label="Discount amount"
-            />
-            <div className="payment-block">
-              <label>Advance payment (optional)</label>
-              <PaymentSplitFields
-                value={form.payments}
-                onChange={(payments) => setForm({ ...form, payments })}
-                expectedTotal={discountedTotal > 0 ? discountedTotal : null}
-                allowPartial
+          <form onSubmit={onSubmit}>
+            <div className="form-row">
+              <input
+                type="date"
+                value={form.checkInDate}
+                onChange={(e) => setForm({ ...form, checkInDate: e.target.value })}
+                required
               />
+              <input
+                type="date"
+                value={form.checkOutDate}
+                onChange={(e) => setForm({ ...form, checkOutDate: e.target.value })}
+                required
+              />
+              <select
+                value={form.roomId}
+                onChange={(e) => onRoomChange(e.target.value)}
+                required
+                disabled={!availableRooms.length}
+              >
+                <option value="">
+                  {form.checkInDate && form.checkOutDate
+                    ? availableRooms.length
+                      ? 'Select room'
+                      : 'No rooms available'
+                    : 'Choose dates first'}
+                </option>
+                {availableRooms.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.roomNumber} — {r.roomType} ({money(r.ratePerNight)})
+                  </option>
+                ))}
+              </select>
+              <input
+                placeholder="Guest name"
+                value={form.guestName}
+                onChange={(e) => setForm({ ...form, guestName: e.target.value })}
+                required
+              />
+              <input
+                placeholder="Guest phone"
+                value={form.guestPhone}
+                onChange={(e) => setForm({ ...form, guestPhone: e.target.value })}
+              />
+              <input
+                type="email"
+                placeholder="Guest email"
+                value={form.guestEmail}
+                onChange={(e) => setForm({ ...form, guestEmail: e.target.value })}
+              />
+              <input
+                placeholder="Guest address"
+                value={form.guestAddress}
+                onChange={(e) => setForm({ ...form, guestAddress: e.target.value })}
+              />
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="Discount"
+                value={form.discountAmount}
+                onChange={(e) => setForm({ ...form, discountAmount: e.target.value })}
+                aria-label="Discount amount"
+              />
+              <div className="payment-block">
+                <label>Advance payment (optional)</label>
+                <PaymentSplitFields
+                  value={form.payments}
+                  onChange={(payments) => setForm({ ...form, payments })}
+                  expectedTotal={discountedTotal > 0 ? discountedTotal : null}
+                  allowPartial
+                />
+              </div>
+              <button className="btn btn-primary" type="submit" disabled={loading || !form.roomId}>
+                {loading ? 'Saving…' : 'Book'}
+              </button>
             </div>
-            <button className="btn btn-primary" type="submit" disabled={loading || !form.roomId}>
-              {loading ? 'Saving…' : 'Book'}
-            </button>
+
+            <details className="guest-report-toggle">
+              <summary>Guest report details (optional)</summary>
+              <div className="form-row">
+                <input
+                  placeholder="Occupation"
+                  value={form.guestOccupation}
+                  onChange={(e) => setForm({ ...form, guestOccupation: e.target.value })}
+                />
+                <input
+                  placeholder="Purpose of stay"
+                  value={form.stayPurpose}
+                  onChange={(e) => setForm({ ...form, stayPurpose: e.target.value })}
+                />
+                <input
+                  placeholder="Emergency contact name"
+                  value={form.guestContactName}
+                  onChange={(e) => setForm({ ...form, guestContactName: e.target.value })}
+                />
+                <input
+                  type="tel"
+                  placeholder="Emergency contact phone"
+                  value={form.guestContactPhone}
+                  onChange={(e) => setForm({ ...form, guestContactPhone: e.target.value })}
+                />
+                <input
+                  placeholder="Means of ID (NIN, voter card, licence)"
+                  value={form.guestIdType}
+                  onChange={(e) => setForm({ ...form, guestIdType: e.target.value })}
+                />
+                <input
+                  placeholder="ID document number"
+                  value={form.guestIdDocument}
+                  onChange={(e) => setForm({ ...form, guestIdDocument: e.target.value })}
+                />
+                <input
+                  placeholder="Vehicle no."
+                  value={form.vehicleNo}
+                  onChange={(e) => setForm({ ...form, vehicleNo: e.target.value })}
+                />
+                <input
+                  placeholder="Arrival from"
+                  value={form.arrivalFrom}
+                  onChange={(e) => setForm({ ...form, arrivalFrom: e.target.value })}
+                />
+                <input
+                  type="time"
+                  aria-label="Time of arrival"
+                  title="Time of arrival"
+                  value={form.arrivalTime}
+                  onChange={(e) => setForm({ ...form, arrivalTime: e.target.value })}
+                />
+                <input
+                  placeholder="Destination"
+                  value={form.destination}
+                  onChange={(e) => setForm({ ...form, destination: e.target.value })}
+                />
+                <input
+                  type="time"
+                  aria-label="Time of departure"
+                  title="Time of departure"
+                  value={form.departureTime}
+                  onChange={(e) => setForm({ ...form, departureTime: e.target.value })}
+                />
+              </div>
+            </details>
           </form>
           {nights > 0 && (
             <p className="muted">
@@ -429,6 +526,14 @@ export default function Bookings() {
                   <button
                     className="btn btn-ghost"
                     onClick={() =>
+                      printGuestReport(b).catch((err) => setError(err.message))
+                    }
+                  >
+                    Report
+                  </button>
+                  <button
+                    className="btn btn-ghost"
+                    onClick={() =>
                       downloadFile(`/receipts/booking/${b.id}.pdf`, `booking-${b.id}.pdf`).catch(
                         (err) => setError(err.message)
                       )
@@ -510,6 +615,34 @@ export default function Bookings() {
                     <dt>Email</dt>
                     <dd>{preview.guestEmail || '—'}</dd>
                   </div>
+                  <div>
+                    <dt>Occupation</dt>
+                    <dd>{preview.guestOccupation || '—'}</dd>
+                  </div>
+                  <div>
+                    <dt>Purpose of stay</dt>
+                    <dd>{preview.stayPurpose || '—'}</dd>
+                  </div>
+                  <div>
+                    <dt>Emergency contact</dt>
+                    <dd>{preview.guestContactName || '—'}</dd>
+                  </div>
+                  <div>
+                    <dt>Emergency phone</dt>
+                    <dd>{preview.guestContactPhone || '—'}</dd>
+                  </div>
+                  <div>
+                    <dt>Means of ID</dt>
+                    <dd>{preview.guestIdType || '—'}</dd>
+                  </div>
+                  <div>
+                    <dt>ID document</dt>
+                    <dd>{preview.guestIdDocument || '—'}</dd>
+                  </div>
+                  <div>
+                    <dt>Vehicle no.</dt>
+                    <dd>{preview.vehicleNo || '—'}</dd>
+                  </div>
                   <div className="detail-wide">
                     <dt>Address</dt>
                     <dd>{preview.guestAddress || '—'}</dd>
@@ -541,6 +674,22 @@ export default function Bookings() {
                   <div>
                     <dt>Check-out date</dt>
                     <dd>{formatDate(preview.checkOutDate)}</dd>
+                  </div>
+                  <div>
+                    <dt>Arrival from</dt>
+                    <dd>{preview.arrivalFrom || '—'}</dd>
+                  </div>
+                  <div>
+                    <dt>Time of arrival</dt>
+                    <dd>{preview.arrivalTime || '—'}</dd>
+                  </div>
+                  <div>
+                    <dt>Destination</dt>
+                    <dd>{preview.destination || '—'}</dd>
+                  </div>
+                  <div>
+                    <dt>Time of departure</dt>
+                    <dd>{preview.departureTime || '—'}</dd>
                   </div>
                   <div>
                     <dt>Nights</dt>
@@ -632,6 +781,15 @@ export default function Bookings() {
                 }
               >
                 Download PDF
+              </button>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() =>
+                  printGuestReport(preview).catch((err) => setError(err.message))
+                }
+              >
+                Print report
               </button>
               <button
                 type="button"

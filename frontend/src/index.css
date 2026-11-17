@@ -1771,6 +1771,24 @@ textarea::placeholder {
   flex: 0 0 auto;
 }
 
+.guest-report-toggle {
+  margin-top: var(--spacing-3);
+  padding-top: var(--spacing-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.guest-report-toggle summary {
+  cursor: pointer;
+  margin-bottom: var(--spacing-2);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.guest-report-toggle[open] summary {
+  margin-bottom: var(--spacing-3);
+}
+
 .row-actions {
   display: flex;
   flex-wrap: wrap;
