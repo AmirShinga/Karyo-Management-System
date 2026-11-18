@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 import api from '../api/api';
 import { money, formatDate } from '../utils/format';
 import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
 import usePagedResource from '../hooks/usePagedResource';
 import Pagination, { SearchInput } from '../components/Pagination';
 import TableSkeleton from '../components/TableSkeleton';
 
 export default function Expenses() {
   const { can } = useAuth();
+  const { revision } = useSocket();
   const canCreate = can('expenses.create');
   const canDelete = can('expenses.delete');
   const list = usePagedResource('/expenses', { initialLimit: 20 });
@@ -40,7 +42,7 @@ export default function Expenses() {
     return () => {
       cancelled = true;
     };
-  }, [from, to]);
+  }, [from, to, revision]);
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -94,7 +96,7 @@ export default function Expenses() {
       {summary && (
         <div className="grid">
           <div className="card stat">
-            <span className="stat-label">Total (all time)</span>
+            <span className="stat-label">Total (filtered)</span>
             <span className="stat-value">{money(summary.total)}</span>
           </div>
           {summary.byCategory.slice(0, 3).map((c) => (

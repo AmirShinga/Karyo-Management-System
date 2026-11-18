@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import api from '../api/api';
 import { money, formatDate } from '../utils/format';
 import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
 import PaymentSplitFields from '../components/PaymentSplitFields';
 import { PAYMENT_LABEL, emptyPaymentRow, toPaymentPayload } from '../utils/payments';
 import usePagedResource from '../hooks/usePagedResource';
@@ -12,6 +13,7 @@ const SOURCE_LABEL = { room: 'Room', restaurant: 'Restaurant', other: 'Other' };
 
 export default function Income() {
   const { can } = useAuth();
+  const { revision } = useSocket();
   const canCreate = can('income.create');
   const list = usePagedResource('/income', { initialLimit: 20 });
   const [summary, setSummary] = useState(null);
@@ -44,7 +46,7 @@ export default function Income() {
     return () => {
       cancelled = true;
     };
-  }, [from, to]);
+  }, [from, to, revision]);
 
   const onAmountChange = (value) => {
     setForm((prev) => {

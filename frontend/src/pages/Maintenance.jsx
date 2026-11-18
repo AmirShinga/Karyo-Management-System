@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Plus, X } from 'lucide-react';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
 import { money, formatDate } from '../utils/format';
 import usePagedResource from '../hooks/usePagedResource';
 import useFocusTrap from '../hooks/useFocusTrap';
@@ -16,6 +17,7 @@ const emptyForm = { roomId: '', title: '', description: '', category: 'general',
 
 export default function Maintenance() {
   const { can } = useAuth();
+  const { revision } = useSocket();
   const canManage = can('maintenance.manage');
   const list = usePagedResource('/maintenance', { initialLimit: 20 });
   const [rooms, setRooms] = useState([]);
@@ -30,19 +32,25 @@ export default function Maintenance() {
   useFocusTrap(drawerOpen, drawerRef, () => setDrawerOpen(false));
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
       try {
         const [roomsRes, usersRes] = await Promise.all([
           api.get('/rooms', { params: { limit: 100 } }),
           api.get('/auth/users', { params: { limit: 100 } }).catch(() => ({ data: { data: [] } })),
         ]);
-        setRooms(roomsRes.data.data || []);
-        setUsers(usersRes.data.data || []);
+        if (!cancelled) {
+          setRooms(roomsRes.data.data || []);
+          setUsers(usersRes.data.data || []);
+        }
       } catch {
         // Non-fatal.
       }
     })();
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [revision]);
 
   const openCreate = () => {
     setEditingId(null);

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import api from '../api/api';
 import { money } from '../utils/format';
 import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
 import usePagedResource from '../hooks/usePagedResource';
 import Pagination, { SearchInput } from '../components/Pagination';
 import TableSkeleton from '../components/TableSkeleton';
@@ -11,6 +12,7 @@ const emptyForm = { name: '', category: '', price: '', cost: '', sortOrder: '', 
 
 export default function MenuManagement() {
   const { can } = useAuth();
+  const { revision } = useSocket();
   const canCreate = can('menu.create');
   const canUpdate = can('menu.update');
   const canDelete = can('menu.delete');
@@ -38,7 +40,7 @@ export default function MenuManagement() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [revision]);
 
   const resetForm = () => {
     setForm(emptyForm);

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import api from '../api/api';
 import { money, formatDate } from '../utils/format';
 import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
 import PaymentSplitFields from '../components/PaymentSplitFields';
 import { PAYMENT_LABEL, emptyPaymentRow, paymentTotal, toPaymentPayload } from '../utils/payments';
 
@@ -9,6 +10,7 @@ const TYPE_LABEL = { booking: 'Booking', order: 'Order' };
 
 export default function Outstanding() {
   const { can } = useAuth();
+  const { revision } = useSocket();
   const canPayBookings = can('bookings.checkout');
   const canPayOrders = can('orders.create');
   const [items, setItems] = useState([]);
@@ -42,7 +44,7 @@ export default function Outstanding() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [revision]);
 
   useEffect(() => {
     if (!selected) return undefined;
@@ -112,7 +114,7 @@ export default function Outstanding() {
           : `Partial payment recorded for ${selected.reference}.`
       );
       closePayment();
-      await load();
+      await load().catch(() => {});
     } catch (err) {
       setError(err.message);
     } finally {

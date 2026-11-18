@@ -9,18 +9,22 @@ export function SocketProvider({ children }) {
   const { token, isAuthenticated, refresh } = useAuth();
   const [socket, setSocket] = useState(null);
   const [connected, setConnected] = useState(false);
+  const [revision, setRevision] = useState(0);
 
   useEffect(() => {
     if (!isAuthenticated) {
       return undefined;
     }
     const s = io(API_ORIGIN, { auth: { token }, transports: ['websocket'] });
+    const bump = () => setRevision((value) => value + 1);
     s.on('connect', () => setConnected(true));
     s.on('disconnect', () => setConnected(false));
     s.on('permissions:updated', () => refresh());
+    s.on('data:changed', bump);
     setSocket(s);
 
     return () => {
+      s.off('data:changed', bump);
       s.disconnect();
       setSocket(null);
     };
@@ -31,8 +35,8 @@ export function SocketProvider({ children }) {
       socket?.on(event, handler);
       return () => socket?.off(event, handler);
     };
-    return { socket, connected, on };
-  }, [socket, connected]);
+    return { socket, connected, on, revision };
+  }, [socket, connected, revision]);
 
   return <SocketContext.Provider value={value}>{children}</SocketContext.Provider>;
 }

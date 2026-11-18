@@ -105,16 +105,23 @@ export default function Pagination({ page, pages = 1, total = 0, limit, onPage, 
 
 /** Debounced text input used for list search fields. */
 export function SearchInput({ value, onChange, placeholder = 'Search…', loading }) {
-  const [local, setLocal] = useState(value ?? '');
+  const externalValue = value ?? '';
+  const [local, setLocal] = useState(externalValue);
+  const [lastExternal, setLastExternal] = useState(externalValue);
   const timer = useRef(null);
+
+  if (externalValue !== lastExternal) {
+    setLastExternal(externalValue);
+    setLocal(externalValue);
+  }
+
+  useEffect(() => {
+    if (timer.current) clearTimeout(timer.current);
+  }, [externalValue]);
 
   useEffect(() => () => {
     if (timer.current) clearTimeout(timer.current);
   }, []);
-
-  useEffect(() => {
-    setLocal(value ?? '');
-  }, [value]);
 
   const handle = useCallback(
     (next) => {

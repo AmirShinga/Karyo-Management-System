@@ -59,6 +59,7 @@ async function refreshAccessToken() {
         localStorage.setItem('token', token);
         if (user) localStorage.setItem('user', JSON.stringify(user));
         if (permissions) localStorage.setItem('permissions', JSON.stringify(permissions));
+        window.dispatchEvent(new StorageEvent('storage', { key: 'token' }));
         return token;
       })
       .finally(() => {

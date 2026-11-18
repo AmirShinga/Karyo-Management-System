@@ -1,6 +1,7 @@
 const { pool } = require('../../config/db');
 const { sendData, badRequest, conflict } = require('../../utils/response');
 const { ROLE_CODE_PATTERN, slugifyRole, listRoles } = require('../../db/roles');
+const { invalidate } = require('../../utils/permissionCache');
 
 async function getRoles(req, res, next) {
   try {
@@ -36,6 +37,7 @@ async function createRole(req, res, next) {
       'INSERT IGNORE INTO role_permissions (role, permission_code, allowed) VALUES (?, ?, 1)',
       [code, 'dashboard.view']
     );
+    invalidate();
 
     return sendData(
       res,

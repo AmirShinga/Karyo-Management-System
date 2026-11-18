@@ -1,12 +1,14 @@
 ﻿import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
 
 const toSets = (matrix) =>
   Object.fromEntries(Object.entries(matrix).map(([role, codes]) => [role, new Set(codes)]));
 
 export default function Permissions() {
   const { roleLabel, refreshRoles } = useAuth();
+  const { revision } = useSocket();
   const [permissions, setPermissions] = useState([]);
   const [editableRoles, setEditableRoles] = useState([]);
   const [matrix, setMatrix] = useState({});
@@ -25,7 +27,7 @@ export default function Permissions() {
     setPermissions(data.permissions);
     setEditableRoles(data.editableRoles);
     setMatrix(toSets(data.matrix));
-    setDirty(new Set());
+    setDirty((prev) => (prev.size ? new Set() : prev));
   }, []);
 
   const load = useCallback(async () => {
@@ -43,6 +45,7 @@ export default function Permissions() {
   }, [applyData]);
 
   useEffect(() => {
+    if (dirty.size) return undefined;
     let cancelled = false;
     api
       .get('/permissions')
@@ -58,7 +61,7 @@ export default function Permissions() {
     return () => {
       cancelled = true;
     };
-  }, [applyData]);
+  }, [applyData, revision, dirty]);
 
   const modules = useMemo(() => {
     const grouped = new Map();
@@ -113,7 +116,8 @@ export default function Permissions() {
       const label = payload.label;
       setRoleForm({ label: '', code: '' });
       await refreshRoles();
-      await load();
+      const res = await api.get('/permissions');
+      setEditableRoles(res.data.data.editableRoles);
       setNotice(`Role "${label}" created. Assign its permissions below.`);
     } catch (err) {
       setError(err.message);

@@ -5,6 +5,7 @@ import { money, formatDate, formatDateTime } from '../utils/format';
 import { printReceiptById } from '../utils/receiptPrint';
 import { printGuestReport } from '../utils/guestReportPrint';
 import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
 import PaymentSplitFields from '../components/PaymentSplitFields';
 import usePagedResource from '../hooks/usePagedResource';
 import Pagination, { SearchInput } from '../components/Pagination';
@@ -68,6 +69,7 @@ const emptyForm = {
 
 export default function Bookings() {
   const { can } = useAuth();
+  const { revision } = useSocket();
   const canBook = can('bookings.create');
   const canCheckIn = can('bookings.checkin');
   const canCheckOut = can('bookings.checkout');
@@ -131,6 +133,7 @@ export default function Bookings() {
           setNights(res.data.meta?.nights || 0);
           const selected = res.data.data.find((r) => String(r.id) === String(form.roomId));
           setRate(selected ? selected.ratePerNight : 0);
+          if (form.roomId && !selected) setForm((prev) => ({ ...prev, roomId: '' }));
         }
       } catch {
         if (!cancelled) setAvailableRooms([]);
@@ -139,7 +142,7 @@ export default function Bookings() {
     return () => {
       cancelled = true;
     };
-  }, [form.checkInDate, form.checkOutDate, form.roomId]);
+  }, [form.checkInDate, form.checkOutDate, form.roomId, revision]);
 
   const onRoomChange = (roomId) => {
     const selected = availableRooms.find((r) => String(r.id) === String(roomId));

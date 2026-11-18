@@ -3,11 +3,13 @@ import api from '../api/api';
 import { money } from '../utils/format';
 import { printReceiptById } from '../utils/receiptPrint';
 import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
 import PaymentSplitFields from '../components/PaymentSplitFields';
 import { emptyPaymentRow, toPaymentPayload } from '../utils/payments';
 
 export default function POS() {
   const { can } = useAuth();
+  const { revision } = useSocket();
   const canOrder = can('orders.create');
   const [menu, setMenu] = useState([]);
   const [activeCategory, setActiveCategory] = useState('');
@@ -28,7 +30,14 @@ export default function POS() {
     (async () => {
       try {
         const res = await api.get('/menu?limit=100&available=true');
-        if (!cancelled) setMenu(res.data.data);
+        if (!cancelled) {
+          const items = res.data.data;
+          setMenu(items);
+          const prices = new Map(items.map((item) => [item.id, item.price]));
+          setCart((prev) =>
+            prev.map((line) => ({ ...line, price: prices.get(line.menuItemId) ?? line.price }))
+          );
+        }
       } catch (err) {
         if (!cancelled) setError(err.message);
       }
@@ -36,7 +45,7 @@ export default function POS() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [revision]);
 
   useEffect(() => {
     let cancelled = false;
@@ -52,7 +61,7 @@ export default function POS() {
     return () => {
       cancelled = true;
     };
-  }, [orderType]);
+  }, [orderType, revision]);
 
   const subtotal = useMemo(
     () => cart.reduce((sum, line) => sum + line.price * line.quantity, 0),

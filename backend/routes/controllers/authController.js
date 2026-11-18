@@ -459,6 +459,13 @@ async function updateUser(req, res, next) {
       [id]
     );
     if (!beforeRows.length) return next(notFound('User not found'));
+    if (fields.email !== undefined) {
+      const [duplicate] = await pool.query(
+        'SELECT id FROM users WHERE email = ? AND id <> ? LIMIT 1',
+        [fields.email.toLowerCase(), id]
+      );
+      if (duplicate.length) return next(conflict('A user with that email already exists'));
+    }
     const sets = [];
     const values = [];
     if (fields.name !== undefined) { sets.push('name = ?'); values.push(fields.name); }

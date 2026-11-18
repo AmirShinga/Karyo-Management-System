@@ -14,7 +14,9 @@ export default function ResetPassword() {
   const onSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    if (password.length < 8) return setError('Password must be at least 8 characters');
+    if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{10,128}$/.test(password)) {
+      return setError('Password must be 10+ characters with upper, lower, number and symbol');
+    }
     if (password !== confirm) return setError('Passwords do not match');
     setLoading(true);
     try {

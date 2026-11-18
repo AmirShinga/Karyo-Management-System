@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import api from '../api/api';
+import { useSocket } from '../context/SocketContext';
 
 /**
  * Small data hook for paginated list endpoints.
@@ -7,6 +8,7 @@ import api from '../api/api';
  */
 export default function usePagedResource(endpoint, options = {}) {
   const { initialLimit = 20, initialFilters = {}, immediate = true } = options;
+  const { revision } = useSocket();
 
   const [rows, setRows] = useState([]);
   const [meta, setMeta] = useState({ page: 1, limit: initialLimit, total: 0, pages: 1 });
@@ -50,7 +52,7 @@ export default function usePagedResource(endpoint, options = {}) {
     return () => {
       active = false;
     };
-  }, [load, immediate]);
+  }, [load, immediate, revision]);
 
   const setFilter = useCallback((patch) => {
     setPage(1);

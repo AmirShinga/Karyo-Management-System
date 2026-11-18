@@ -143,7 +143,7 @@ async function revenueBySource(req, res, next) {
   }
 }
 
-/** Occupancy over a window based on room-nights booked. */
+/** Occupancy over a window based on check-ins per day. */
 async function occupancy(req, res, next) {
   try {
     const to = req.query.to || todayStr();

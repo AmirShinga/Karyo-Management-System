@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import api, { downloadFile } from '../api/api';
 import { money, formatDate } from '../utils/format';
 import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
 
 function isoDaysAgo(n) {
   const d = new Date();
@@ -37,6 +38,7 @@ function RevenueChart({ series }) {
 
 export default function Reports() {
   const { can } = useAuth();
+  const { revision } = useSocket();
   const canExport = can('reports.export');
   const [from, setFrom] = useState(isoDaysAgo(29));
   const [to, setTo] = useState(todayIso());
@@ -48,7 +50,10 @@ export default function Reports() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const load = async () => {
+  const requestId = useRef(0);
+
+  const load = useCallback(async () => {
+    const id = ++requestId.current;
     setError('');
     setLoading(true);
     try {
@@ -60,44 +65,28 @@ export default function Reports() {
         api.get(`/reports/occupancy${q}`),
         api.get(`/reports/sales${q}`),
       ]);
+      if (id !== requestId.current) return;
       setDashboard(d.data.data);
       setRevenue(r.data.data);
       setBySource(s.data.data.bySource);
       setOccupancy(o.data.data);
       setTopItems(t.data.data.topItems);
     } catch (err) {
-      setError(err.message);
+      if (id === requestId.current) setError(err.message);
     } finally {
-      setLoading(false);
+      if (id === requestId.current) setLoading(false);
     }
-  };
+  }, [from, to]);
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const q = `?from=${from}&to=${to}`;
-        const [d, r, s, o, t] = await Promise.all([
-          api.get('/reports/dashboard'),
-          api.get(`/reports/revenue${q}`),
-          api.get(`/reports/revenue-by-source${q}`),
-          api.get(`/reports/occupancy${q}`),
-          api.get(`/reports/sales${q}`),
-        ]);
-        if (cancelled) return;
-        setDashboard(d.data.data);
-        setRevenue(r.data.data);
-        setBySource(s.data.data.bySource);
-        setOccupancy(o.data.data);
-        setTopItems(t.data.data.topItems);
-      } catch (err) {
-        if (!cancelled) setError(err.message);
-      }
-    })();
+    let active = true;
+    Promise.resolve().then(() => {
+      if (active) load();
+    });
     return () => {
-      cancelled = true;
+      active = false;
     };
-  }, [from, to]);
+  }, [load, revision]);
 
   const exportFile = async (kind) => {
     try {
@@ -220,7 +209,7 @@ export default function Reports() {
 
       {occupancy && (
         <div className="card">
-          <h2>Occupancy (room-nights by check-in date)</h2>
+          <h2>Occupancy (check-ins by date)</h2>
           <p className="muted">{occupancy.totalRooms} rooms total</p>
           <table className="table">
             <thead>

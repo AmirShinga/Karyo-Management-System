@@ -86,7 +86,7 @@ const greetingForHour = (hour) => {
 
 export default function Dashboard() {
   const { user, can, roleLabel } = useAuth();
-  const { on } = useSocket();
+  const { revision } = useSocket();
   const [health, setHealth] = useState(null);
   const [error, setError] = useState('');
   const [outstanding, setOutstanding] = useState(null);
@@ -119,16 +119,10 @@ export default function Dashboard() {
       }
     };
     loadOutstanding();
-    const unsubscribe = [
-      on('booking:updated', loadOutstanding),
-      on('order:created', loadOutstanding),
-      on('order:updated', loadOutstanding),
-    ];
     return () => {
       cancelled = true;
-      unsubscribe.forEach((off) => off());
     };
-  }, [canSeeOutstanding, on]);
+  }, [canSeeOutstanding, revision]);
 
   const firstName = (user?.name || '').split(' ')[0] || 'there';
   const actions = QUICK_ACTIONS.filter((action) => can(action.perm));
@@ -169,7 +163,7 @@ export default function Dashboard() {
 
       {error && <div className="alert alert-error">{error}</div>}
 
-      {outstanding?.count > 0 && (
+      {canSeeOutstanding && outstanding?.count > 0 && (
         <div className="outstanding-alert" role="alert">
           <span className="outstanding-alert-icon" aria-hidden="true">
             <AlertTriangle size={22} />

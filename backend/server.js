@@ -7,9 +7,11 @@ const { Server } = require('socket.io');
 
 const { testConnection } = require('./config/db');
 const { assertEnv } = require('./config/env');
-const { sendError } = require('./utils/response');
+const { sendError, AppError } = require('./utils/response');
 const { apiLimiter } = require('./middleware/rateLimit');
+const { isSessionCurrent } = require('./middleware/auth');
 const { loadRevoked } = require('./utils/sessions');
+const liveUpdates = require('./middleware/liveUpdates');
 
 const app = express();
 const server = http.createServer(app);
@@ -28,7 +30,7 @@ app.use(
   cors({
     origin(origin, cb) {
       if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
-      return cb(new Error('Not allowed by CORS'));
+      return cb(new AppError(403, 'FORBIDDEN', 'Not allowed by CORS'));
     },
     credentials: true,
   })
@@ -54,6 +56,7 @@ app.use((req, res, next) => {
 });
 
 app.use('/api', apiLimiter);
+app.use(liveUpdates);
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
@@ -86,6 +89,7 @@ app.use((req, res) => {
 // Global error handler
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
+  if (res.headersSent) return next(err);
   const status = err.status || 500;
   const code = err.code || 'SERVER_ERROR';
   const message = status >= 500 ? 'Internal server error' : err.message;
@@ -100,15 +104,16 @@ app.set('io', io);
 
 // Socket auth: clients must present a valid JWT.
 const jwt = require('jsonwebtoken');
-io.use((socket, next) => {
+io.use(async (socket, next) => {
   const token = socket.handshake.auth?.token;
   if (!token) return next(new Error('Authentication required'));
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET);
+    if (!(await isSessionCurrent(payload))) return next(new Error('Session revoked'));
     socket.user = { id: payload.id, role: payload.role };
-    next();
+    return next();
   } catch {
-    next(new Error('Invalid token'));
+    return next(new Error('Invalid token'));
   }
 });
 

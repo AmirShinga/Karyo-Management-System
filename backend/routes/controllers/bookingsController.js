@@ -159,8 +159,8 @@ async function availability(req, res, next) {
     // A room is unavailable if it has a non-cancelled booking that overlaps the window.
     const [rooms] = await pool.query(
       `SELECT r.* FROM rooms r
-       WHERE r.deleted_at IS NULL
-         AND r.status <> 'maintenance'
+        WHERE r.deleted_at IS NULL
+          AND r.status = 'available'
          AND r.id NOT IN (
            SELECT b.room_id FROM bookings b
            WHERE b.deleted_at IS NULL
@@ -209,6 +209,7 @@ async function createBooking(req, res, next) {
       if (!roomRows.length) throw notFound('Room not found');
       const room = roomRows[0];
       if (room.status === 'maintenance') throw conflict('Room is under maintenance');
+      if (room.status === 'occupied') throw conflict('Room is occupied');
 
       const [overlaps] = await conn.query(
         `SELECT id FROM bookings

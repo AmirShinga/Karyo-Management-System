@@ -32,7 +32,7 @@ function fmtMoney(n) {
 }
 
 function fmtDate(d) {
-  if (!d) return '�?"';
+  if (!d) return '—';
   const dt = new Date(d);
   if (Number.isNaN(dt.getTime())) return String(d);
   return dt.toISOString().slice(0, 10);
